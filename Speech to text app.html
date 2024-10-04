@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VoiceScribe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.28.0/feather.min.js"></script>
+    <style>
+        :root {
+            --primary-bg: #1a1a2e;
+            --secondary-bg: #16213e;
+            --accent-color: #0f3460;
+            --text-color: #e94560;
+            --button-color: #e94560;
+            --button-hover: #c73e54;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100%;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 100%;
+            width: 400px;
+            background-color: var(--secondary-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: var(--text-color);
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .control-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            background-color: var(--button-color);
+            color: white;
+            margin: 0 10px;
+        }
+        .control-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px var(--button-color);
+        }
+        .control-button.active {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background-color: var(--accent-color);
+            color: white;
+            resize: vertical;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: bold;
+            color: white;
+            background-color: var(--button-color);
+        }
+        button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        .saved-notes {
+            margin-top: 30px;
+        }
+        .saved-notes h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .saved-note {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--accent-color);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .saved-note span {
+            flex: 1 1 100%;
+            margin-bottom: 10px;
+            word-break: break-all;
+            color: white;
+        }
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+            width: 100%;
+        }
+        .copy-button, .delete-button {
+            background-color: var(--button-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-left: 10px;
+            font-size: 0.8rem;
+        }
+        .copy-button:hover, .delete-button:hover {
+            background-color: var(--button-hover);
+        }
+        .copy-button svg, .delete-button svg {
+            width: 14px;
+            height: 14px;
+            margin-right: 5px;
+        }
+        #languageSelect {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        #status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .control-button {
+                width: 50px;
+                height: 50px;
+            }
+            textarea {
+                height: 100px;
+            }
+            .copy-button, .delete-button {
+                padding: 5px;
+            }
+            .copy-button span, .delete-button span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VoiceScribe</h1>
+        <select id="languageSelect">
+            <option value="en-US">English (US)</option>
+            <option value="es-ES">Español (Spanish)</option>
+            <option value="fr-FR">Français (French)</option>
+            <option value="de-DE">Deutsch (German)</option>
+            <option value="it-IT">Italiano (Italian)</option>
+            <option value="ja-JP">日本語 (Japanese)</option>
+        </select>
+        <div class="control-buttons">
+            <button id="toggleButton" class="control-button" title="Start recording">
+                <i data-feather="mic"></i>
+            </button>
+        </div>
+        <div id="status"></div>
+        <textarea id="noteTextarea" placeholder="Your speech will appear here..."></textarea>
+        <button id="saveButton">
+            <i data-feather="save" style="margin-right: 10px;"></i> Save Note
+        </button>
+        <div class="saved-notes">
+            <h3>Saved Notes:</h3>
+            <ul id="savedNotesList" style="list-style-type: none; padding: 0;"></ul>
+        </div>
+        <button id="downloadButton" style="display: none;">
+            <i data-feather="download" style="margin-right: 10px;"></i> Download All Notes
+        </button>
+    </div>
+
+    <script>
+        feather.replace();
+
+        const toggleButton = document.getElementById('toggleButton');
+        const noteTextarea = document.getElementById('noteTextarea');
+        const saveButton = document.getElementById('saveButton');
+        const savedNotesList = document.getElementById('savedNotesList');
+        const downloadButton = document.getElementById('downloadButton');
+        const languageSelect = document.getElementById('languageSelect');
+        const statusDiv = document.getElementById('status');
+
+        let recognition;
+        let isListening = false;
+        let savedNotes = JSON.parse(localStorage.getItem('savedNotes')) || [];
+
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+        }
+
+        async function initializeSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+
+                recognition.onstart = () => {
+                    isListening = true;
+                    toggleButton.classList.add('active');
+                    toggleButton.innerHTML = '<i data-feather="stop-circle"></i>';
+                    feather.replace();
+                    updateStatus('Listening...');
+                };
+
+                recognition.onend = () => {
+                    isListening = false;
+                    toggleButton.classList.remove('active');
+                    toggleButton.innerHTML = '<i data-feather="mic"></i>';
+                    feather.replace();
+                    updateStatus('');
+                };
+
+                recognition.onresult = (event) => {
+                    const transcript = Array.from(event.results)
+                        .filter(result => result.isFinal)
+                        .map(result => result[0].transcript)
+                        .join(' ');
+                    noteTextarea.value += ` ${transcript}`;
+                };
+
+                recognition.onerror = (event) => {
+                  console.error('Speech recognition error', event.error);
+                    updateStatus(`Error: ${event.error}`);
+                    stopRecognition();
+                };
+
+                toggleButton.addEventListener('click', toggleRecognition);
+                languageSelect.addEventListener('change', () => {
+                    recognition.lang = languageSelect.value;
+                });
+            } else {
+                toggleButton.style.display = 'none';
+                updateStatus('Speech recognition is not supported in your browser.');
+            }
+        }
+
+        async function toggleRecognition() {
+            try {
+                await navigator.mediaDevices.getUserMedia({ audio: true });
+                if (!isListening) {
+                    startRecognition();
+                } else {
+                    stopRecognition();
+                }
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                updateStatus('Unable to access microphone. Please check your browser settings.');
+            }
+        }
+
+        function startRecognition() {
+            recognition.lang = languageSelect.value;
+            recognition.start();
+        }
+
+        function stopRecognition() {
+            if (isListening) {
+                recognition.stop();
+            }
+        }
+
+        saveButton.addEventListener('click', () => {
+            const note = noteTextarea.value.trim();
+            if (note) {
+                savedNotes.push(note);
+                updateSavedNotesList();
+                noteTextarea.value = '';
+                localStorage.setItem('savedNotes', JSON.stringify(savedNotes));
+            }
+        });
+
+        function updateSavedNotesList() {
+            savedNotesList.innerHTML = '';
+            savedNotes.forEach((note, index) => {
+                const li = document.createElement('li');
+                li.className = 'saved-note';
+                li.innerHTML = `
+                    <span>${note}</span>
+                    <div class="note-actions">
+                        <button class="copy-button" onclick="copyNote(${index})" title="Copy note">
+                            <i data-feather="copy"></i><span>Copy</span>
+                        </button>
+                        <button class="delete-button" onclick="confirmDelete(${index})" title="Delete note">
+                            <i data-feather="trash-2"></i><span>Delete</span>
+                        </button>
+                    </div>
+                `;
+                savedNotesList.appendChild(li);
+            });
+            feather.replace();
+            downloadButton.style.display = savedNotes.length > 0 ? 'flex' : 'none';
+        }
+
+        function copyNote(index) {
+            navigator.clipboard.writeText(savedNotes[index])
+                .then(() => updateStatus('Note copied to clipboard'))
+                .catch(err => updateStatus('Failed to copy note'));
+        }
+
+        function confirmDelete(index) {
+            if (confirm('Are you sure you want to delete this note?')) {
+                deleteNote(index);
+            }
+        }
+
+        function deleteNote(index) {
+            savedNotes.splice(index, 1);
+            updateSavedNotesList();
+            localStorage.setItem('savedNotes', JSON.stringify(savedNotes));
+        }
+
+        downloadButton.addEventListener('click', () => {
+            const element = document.createElement('a');
+            const file = new Blob([savedNotes.join('\n\n')], {type: 'text/plain'});
+            element.href = URL.createObjectURL(file);
+            element.download = 'speech_to_text_notes.txt';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        });
+
+        // Initialize speech recognition and saved notes when the page loads
+        initializeSpeechRecognition();
+        updateSavedNotesList();
+    </script>
+</body>
+</html>
