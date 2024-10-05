@@ -3,21 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoiceScribe</title>
+    <title>VoiceScribe Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.28.0/feather.min.js"></script>
     <style>
         :root {
-            --primary-bg: #1a1a2e;
-            --secondary-bg: #16213e;
-            --accent-color: #0f3460;
-            --text-color: #e94560;
-            --button-color: #e94560;
-            --button-hover: #c73e54;
+            --primary-bg: #0a192f;
+            --secondary-bg: #172a45;
+            --accent-color: #64ffda;
+            --text-color: #8892b0;
+            --button-color: #64ffda;
+            --button-hover: #4ad8b9;
         }
         body, html {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', sans-serif;
             height: 100%;
             background-color: var(--primary-bg);
             color: var(--text-color);
@@ -31,18 +32,20 @@
         }
         .container {
             max-width: 100%;
-            width: 400px;
+            width: 450px;
             background-color: var(--secondary-bg);
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
         }
         h1 {
             text-align: center;
             margin-bottom: 30px;
             font-size: 2.5rem;
-            color: var(--text-color);
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         .control-buttons {
             display: flex;
@@ -50,8 +53,8 @@
             margin-bottom: 30px;
         }
         .control-button {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
@@ -60,33 +63,39 @@
             align-items: center;
             transition: all 0.3s ease;
             background-color: var(--button-color);
-            color: white;
+            color: var(--primary-bg);
             margin: 0 10px;
+            font-size: 1.5rem;
         }
         .control-button:hover {
             transform: scale(1.1);
-            box-shadow: 0 0 15px var(--button-color);
+            box-shadow: 0 0 20px var(--accent-color);
         }
         .control-button.active {
             animation: pulse 1.5s infinite;
         }
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(100, 255, 218, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(100, 255, 218, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(100, 255, 218, 0); }
         }
         textarea {
             width: 100%;
-            height: 120px;
+            height: 150px;
             margin-bottom: 20px;
             padding: 15px;
             border-radius: 10px;
             border: none;
-            background-color: var(--accent-color);
-            color: white;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
             resize: vertical;
             font-size: 1rem;
             box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        textarea:focus {
+            outline: none;
+            box-shadow: 0 0 10px var(--accent-color);
         }
         button {
             width: 100%;
@@ -101,13 +110,15 @@
             transition: all 0.3s ease;
             font-size: 1rem;
             font-weight: bold;
-            color: white;
+            color: var(--primary-bg);
             background-color: var(--button-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         button:hover {
             background-color: var(--button-hover);
             transform: translateY(-2px);
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.4);
         }
         .saved-notes {
             margin-top: 30px;
@@ -115,29 +126,35 @@
         .saved-notes h3 {
             margin-bottom: 15px;
             font-size: 1.2rem;
+            color: var(--accent-color);
         }
         .saved-note {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: var(--accent-color);
+            background-color: var(--primary-bg);
             padding: 15px;
             border-radius: 10px;
             margin-bottom: 15px;
             flex-wrap: wrap;
+            transition: all 0.3s ease;
+        }
+        .saved-note:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.2);
         }
         .saved-note span {
             flex: 1 1 100%;
             margin-bottom: 10px;
             word-break: break-all;
-            color: white;
+            color: var(--text-color);
         }
         .note-actions {
             display: flex;
             justify-content: flex-end;
             width: 100%;
         }
-        .copy-button, .delete-button {
+        .copy-button, .delete-button, .edit-button {
             background-color: var(--button-color);
             padding: 5px 10px;
             border-radius: 5px;
@@ -146,11 +163,12 @@
             align-items: center;
             margin-left: 10px;
             font-size: 0.8rem;
+            color: var(--primary-bg);
         }
-        .copy-button:hover, .delete-button:hover {
+        .copy-button:hover, .delete-button:hover, .edit-button:hover {
             background-color: var(--button-hover);
         }
-        .copy-button svg, .delete-button svg {
+        .copy-button svg, .delete-button svg, .edit-button svg {
             width: 14px;
             height: 14px;
             margin-right: 5px;
@@ -159,16 +177,67 @@
             width: 100%;
             padding: 10px;
             margin-bottom: 20px;
-            background-color: var(--accent-color);
-            color: white;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
             border: none;
             border-radius: 5px;
             font-size: 1rem;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%238892b0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position-x: 98%;
+            background-position-y: 50%;
         }
         #status {
             text-align: center;
             margin-bottom: 20px;
             font-style: italic;
+            color: var(--accent-color);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: var(--secondary-bg);
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid var(--accent-color);
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+        }
+        .close {
+            color: var(--text-color);
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: var(--accent-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #editNoteTextarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--accent-color);
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            font-size: 1rem;
         }
         @media (max-width: 480px) {
             .container {
@@ -178,16 +247,16 @@
                 font-size: 2rem;
             }
             .control-button {
-                width: 50px;
-                height: 50px;
+                width: 60px;
+                height: 60px;
             }
             textarea {
-                height: 100px;
+                height: 120px;
             }
-            .copy-button, .delete-button {
+            .copy-button, .delete-button, .edit-button {
                 padding: 5px;
             }
-            .copy-button span, .delete-button span {
+            .copy-button span, .delete-button span, .edit-button span {
                 display: none;
             }
         }
@@ -195,7 +264,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>VoiceScribe</h1>
+        <h1>VoiceScribe Pro</h1>
         <select id="languageSelect">
             <option value="en-US">English (US)</option>
             <option value="es-ES">Español (Spanish)</option>
@@ -223,6 +292,15 @@
         </button>
     </div>
 
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Edit Note</h2>
+            <textarea id="editNoteTextarea"></textarea>
+            <button id="saveEditButton">Save Changes</button>
+        </div>
+    </div>
+
     <script>
         feather.replace();
 
@@ -233,10 +311,15 @@
         const downloadButton = document.getElementById('downloadButton');
         const languageSelect = document.getElementById('languageSelect');
         const statusDiv = document.getElementById('status');
+        const editModal = document.getElementById('editModal');
+        const editNoteTextarea = document.getElementById('editNoteTextarea');
+        const saveEditButton = document.getElementById('saveEditButton');
+        const closeModal = document.getElementsByClassName('close')[0];
 
         let recognition;
         let isListening = false;
         let savedNotes = JSON.parse(localStorage.getItem('savedNotes')) || [];
+        let editingIndex = -1;
 
         function updateStatus(message) {
             statusDiv.textContent = message;
@@ -265,15 +348,19 @@
                 };
 
                 recognition.onresult = (event) => {
-                    const transcript = Array.from(event.results)
-                        .filter(result => result.isFinal)
-                        .map(result => result[0].transcript)
-                        .join(' ');
-                    noteTextarea.value += ` ${transcript}`;
+                    let finalTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        }
+                    }
+                    if (finalTranscript) {
+                        noteTextarea.value += (noteTextarea.value ? ' ' : '') + finalTranscript;
+                    }
                 };
 
                 recognition.onerror = (event) => {
-                  console.error('Speech recognition error', event.error);
+                    console.error('Speech recognition error', event.error);
                     updateStatus(`Error: ${event.error}`);
                     stopRecognition();
                 };
@@ -334,6 +421,9 @@
                         <button class="copy-button" onclick="copyNote(${index})" title="Copy note">
                             <i data-feather="copy"></i><span>Copy</span>
                         </button>
+                        <button class="edit-button" onclick="editNote(${index})" title="Edit note">
+                            <i data-feather="edit"></i><span>Edit</span>
+                        </button>
                         <button class="delete-button" onclick="confirmDelete(${index})" title="Delete note">
                             <i data-feather="trash-2"></i><span>Delete</span>
                         </button>
@@ -363,11 +453,36 @@
             localStorage.setItem('savedNotes', JSON.stringify(savedNotes));
         }
 
+        function editNote(index) {
+            editingIndex = index;
+            editNoteTextarea.value = savedNotes[index];
+            editModal.style.display = 'block';
+        }
+
+        saveEditButton.addEventListener('click', () => {
+            if (editingIndex !== -1) {
+                savedNotes[editingIndex] = editNoteTextarea.value.trim();
+                updateSavedNotesList();
+                localStorage.setItem('savedNotes', JSON.stringify(savedNotes));
+                editModal.style.display = 'none';
+            }
+        });
+
+        closeModal.onclick = () => {
+            editModal.style.display = 'none';
+        };
+
+        window.onclick = (event) => {
+            if (event.target == editModal) {
+                editModal.style.display = 'none';
+            }
+        };
+
         downloadButton.addEventListener('click', () => {
             const element = document.createElement('a');
             const file = new Blob([savedNotes.join('\n\n')], {type: 'text/plain'});
             element.href = URL.createObjectURL(file);
-            element.download = 'speech_to_text_notes.txt';
+            element.download = 'voicescribe_pro_notes.txt';
             document.body.appendChild(element);
             element.click();
             document.body.removeChild(element);
