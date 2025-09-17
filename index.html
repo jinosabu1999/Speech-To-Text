@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voicescribe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.28.0/feather.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #1a1a1a;
+            --accent-1: #00d4ff;
+            --accent-2: #ff6b35;
+            --accent-3: #7c3aed;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #666666;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #00ff88;
+            --warning: #ffd700;
+            --error: #ff4757;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.4);
+            --blur-sm: blur(4px);
+            --blur-md: blur(8px);
+            --blur-lg: blur(16px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--accent-1);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) translateX(0px); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100px) translateX(100px); opacity: 0; }
+        }
+
+        .container {
+            max-width: 800px;
+            width: 95%;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -2px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .main-card {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur-lg);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 40px;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .main-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-1), transparent);
+        }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .language-selector {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .language-selector select {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .language-selector select:focus {
+            outline: none;
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+        }
+
+        .language-selector::after {
+            content: '';
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            border-right: 2px solid var(--text-secondary);
+            border-bottom: 2px solid var(--text-secondary);
+            rotate: 45deg;
+            pointer-events: none;
+        }
+
+        .record-button {
+            width: 120px;
+            height: 120px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gradient-3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .record-button::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            background: conic-gradient(from 0deg, var(--accent-1), var(--accent-2), var(--accent-3), var(--accent-1));
+            border-radius: 50%;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .record-button.recording {
+            background: var(--gradient-2);
+            animation: pulse-record 2s infinite;
+            transform: scale(1.1);
+        }
+
+        .record-button.recording::before {
+            opacity: 1;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes pulse-record {
+            0%, 100% { box-shadow: var(--shadow-lg), 0 0 0 0 rgba(255, 107, 53, 0.4); }
+            50% { box-shadow: var(--shadow-lg), 0 0 0 20px rgba(255, 107, 53, 0); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .record-button:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            min-height: 40px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .status-indicator.permission-denied {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .status-indicator.listening {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        .status-indicator.error {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .transcript-area {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .textarea-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .transcript-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            resize: vertical;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .transcript-textarea:focus {
+            outline: none;
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+        }
+
+        .transcript-textarea::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .action-button {
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .action-button i {
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .action-button.success i {
+            transform: scale(1.2);
+        }
+
+        .action-button::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-1);
+        }
+
+        .action-button:hover::before {
+            opacity: 0.1;
+        }
+
+        .action-button.primary {
+            background: var(--gradient-3);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        .action-button.primary::before {
+            display: none;
+        }
+
+        .action-button.primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-3px);
+        }
+
+        .notes-section {
+            background: var(--glass-bg);
+            backdrop-filter: var(--blur-lg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .notes-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .notes-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .notes-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .notes-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .note-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .note-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-3);
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: transform 0.3s ease;
+        }
+
+        .note-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--accent-1);
+        }
+
+        .note-card:hover::before {
+            transform: scaleY(1);
+            transform-origin: top;
+        }
+
+        .note-content {
+            margin-bottom: 16px;
+            line-height: 1.5;
+            color: var(--text-primary);
+            word-wrap: break-word;
+        }
+
+        .note-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .note-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .note-action {
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .note-action i {
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .note-action.success i {
+            transform: scale(1.2);
+        }
+
+        .note-action:hover {
+            background: var(--accent-1);
+            color: white;
+            border-color: var(--accent-1);
+        }
+
+        .note-action.delete:hover {
+            background: var(--error);
+            border-color: var(--error);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: var(--blur-md);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 32px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .modal-textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: vertical;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+
+        .modal-textarea:focus {
+            outline: none;
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 24px 16px 50px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-1);
+            box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: var(--blur-md);
+            transform: translateX(400px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            max-width: 300px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-color: var(--success);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .toast.error {
+            border-color: var(--error);
+            background: rgba(255, 71, 87, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .main-card {
+                padding: 24px;
+                border-radius: 24px;
+            }
+
+            .record-button {
+                width: 100px;
+                height: 100px;
+                font-size: 1.5rem;
+            }
+
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .notes-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .notes-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .note-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .note-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
+            .modal-content {
+                margin: 20px;
+                padding: 24px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .main-card {
+                padding: 20px;
+            }
+
+            .record-button {
+                width: 80px;
+                height: 80px;
+                font-size: 1.2rem;
+            }
+
+            .note-actions {
+                flex-wrap: wrap;
+            }
+
+            .note-action span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-particles" id="particles"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1>Voicescribe</h1>
+            <p>AI-powered speech transcription with modern design</p>
+        </header>
+
+        <div class="main-card">
+            <div class="controls-section">
+                <div class="language-selector">
+                    <select id="languageSelect">
+                        <option value="en-US">🇺🇸 English (US)</option>
+                        <option value="en-GB">🇬🇧 English (UK)</option>
+                        <option value="es-ES">🇪🇸 Español (Spain)</option>
+                        <option value="es-MX">🇲🇽 Español (Mexico)</option>
+                        <option value="fr-FR">🇫🇷 Français (France)</option>
+                        <option value="de-DE">🇩🇪 Deutsch (Germany)</option>
+                        <option value="it-IT">🇮🇹 Italiano (Italy)</option>
+                        <option value="pt-BR">🇧🇷 Português (Brazil)</option>
+                        <option value="ja-JP">🇯🇵 日本語 (Japanese)</option>
+                        <option value="ko-KR">🇰🇷 한국어 (Korean)</option>
+                        <option value="zh-CN">🇨🇳 中文 (Chinese)</option>
+                        <option value="hi-IN">🇮🇳 हिन्दी (Hindi)</option>
+                        <option value="ar-SA">🇸🇦 العربية (Arabic)</option>
+                        <option value="ru-RU">🇷🇺 Русский (Russian)</option>
+                    </select>
+                </div>
+
+                <button id="recordButton" class="record-button" title="Start/Stop Recording">
+                    <i data-feather="mic"></i>
+                </button>
+
+                <div class="status-bar">
+                    <div id="statusIndicator" class="status-indicator">
+                        <span id="statusText">Ready to record</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="transcript-area">
+                <textarea 
+                    id="transcriptTextarea" 
+                    class="transcript-textarea"
+                    placeholder="Your speech will appear here in real-time..."
+                ></textarea>
+            </div>
+            <div class="textarea-footer">
+                <span id="liveWordCount">0 words</span>
+            </div>
+
+            <div class="action-buttons">
+                <button id="saveButton" class="action-button primary">
+                    <i data-feather="save"></i>
+                    <span>Save Note</span>
+                </button>
+                <button id="clearButton" class="action-button">
+                    <i data-feather="refresh-cw"></i>
+                    <span>Clear Text</span>
+                </button>
+                <button id="copyButton" class="action-button">
+                    <i data-feather="copy"></i>
+                    <span>Copy Text</span>
+                </button>
+                <button id="downloadButton" class="action-button">
+                    <i data-feather="download"></i>
+                    <span>Export All</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <div class="notes-header">
+                <h2 class="notes-title">Saved Notes</h2>
+                <div class="notes-stats">
+                    <div class="stat-item">
+                        <i data-feather="file-text"></i>
+                        <span id="noteCount">0 notes</span>
+                    </div>
+                    <div class="stat-item">
+                        <i data-feather="type"></i>
+                        <span id="wordCount">0 words</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    class="search-input" 
+                    placeholder="Search through your notes..."
+                >
+                <i data-feather="search" class="search-icon"></i>
+            </div>
+
+            <div class="notes-grid" id="notesGrid">
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-icon">
+                        <i data-feather="mic-off"></i>
+                    </div>
+                    <h3>No notes yet</h3>
+                    <p>Start recording to create your first note</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Note</h3>
+                <button class="modal-close" id="modalClose">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <textarea id="editTextarea" class="modal-textarea" placeholder="Edit your note..."></textarea>
+            <div class="action-buttons">
+                <button id="saveEditButton" class="action-button primary">
+                    <i data-feather="check"></i>
+                    <span>Save Changes</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i data-feather="check-circle"></i>
+        <span id="toastText">Action completed</span>
+    </div>
+
+    <script>
+        feather.replace();
+
+        class Voicescribe {
+            constructor() {
+                this.recognition = null;
+                this.isRecording = false;
+                this.savedNotes = JSON.parse(localStorage.getItem('voicescribe_notes')) || [];
+                this.currentEditIndex = -1;
+                this.searchTimeout = null;
+
+                this.initializeElements();
+                this.initializeSpeechRecognition();
+                this.checkMicrophonePermission();
+                this.bindEvents();
+                this.renderNotes();
+                this.createFloatingParticles();
+                this.updateStats();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    recordButton: document.getElementById('recordButton'),
+                    languageSelect: document.getElementById('languageSelect'),
+                    statusIndicator: document.getElementById('statusIndicator'),
+                    statusText: document.getElementById('statusText'),
+                    transcriptTextarea: document.getElementById('transcriptTextarea'),
+                    liveWordCount: document.getElementById('liveWordCount'),
+                    saveButton: document.getElementById('saveButton'),
+                    clearButton: document.getElementById('clearButton'),
+                    copyButton: document.getElementById('copyButton'),
+                    downloadButton: document.getElementById('downloadButton'),
+                    notesGrid: document.getElementById('notesGrid'),
+                    emptyState: document.getElementById('emptyState'),
+                    searchInput: document.getElementById('searchInput'),
+                    noteCount: document.getElementById('noteCount'),
+                    wordCount: document.getElementById('wordCount'),
+                    editModal: document.getElementById('editModal'),
+                    editTextarea: document.getElementById('editTextarea'),
+                    saveEditButton: document.getElementById('saveEditButton'),
+                    modalClose: document.getElementById('modalClose'),
+                    toast: document.getElementById('toast'),
+                    toastText: document.getElementById('toastText')
+                };
+            }
+
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    this.recognition.continuous = true;
+                    this.recognition.interimResults = true;
+                    this.recognition.maxAlternatives = 1;
+
+                    this.recognition.onstart = () => {
+                        this.isRecording = true;
+                        this.updateRecordingState();
+                        this.showStatus('Listening...', 'listening');
+                    };
+
+                    this.recognition.onend = () => {
+                        if (this.isRecording) { // Prevents state change if stopped manually
+                            this.isRecording = false;
+                            this.updateRecordingState();
+                            this.showStatus('Ready to record');
+                        }
+                    };
+
+                    this.recognition.onresult = (event) => {
+                        let finalTranscript = '';
+                        let interimTranscript = '';
+                        let currentText = this.elements.transcriptTextarea.value;
+
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript.trim() + ' ';
+                            } else {
+                                interimTranscript += transcript;
+                            }
+                        }
+
+                        if (finalTranscript) {
+                             this.elements.transcriptTextarea.value = currentText + finalTranscript;
+                        }
+                         this.updateLiveWordCount();
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        let errorMessage = `Error: ${event.error}`;
+                        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                           errorMessage = "Microphone access denied. Please enable it in your browser settings.";
+                           this.showStatus("Permission Denied", 'permission-denied');
+                        }
+                        this.showToast(`Speech recognition error: ${event.error}`, 'error');
+                        this.isRecording = false;
+                        this.updateRecordingState();
+                    };
+
+                    this.recognition.onnomatch = () => {
+                        this.showToast('No speech was recognized', 'error');
+                    };
+                } else {
+                    this.showStatus('Speech recognition not supported', 'error');
+                    this.elements.recordButton.disabled = true;
+                }
+            }
+            
+            async checkMicrophonePermission() {
+                if (!navigator.permissions) return;
+                try {
+                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+                    if (permissionStatus.state === 'denied') {
+                        this.showStatus('Mic permission denied', 'permission-denied');
+                        this.showToast('Enable microphone in settings to use recording', 'error');
+                    }
+                    permissionStatus.onchange = () => {
+                        if (permissionStatus.state === 'denied') {
+                             this.showStatus('Mic permission denied', 'permission-denied');
+                        } else if (permissionStatus.state === 'granted') {
+                             this.showStatus('Ready to record');
+                        }
+                    };
+                } catch (error) {
+                    console.error("Could not check microphone permission:", error);
+                }
+            }
+
+            bindEvents() {
+                this.elements.recordButton.addEventListener('click', () => this.toggleRecording());
+                this.elements.saveButton.addEventListener('click', () => this.saveNote());
+                this.elements.clearButton.addEventListener('click', () => this.clearTranscript());
+                this.elements.copyButton.addEventListener('click', (e) => this.copyTranscript(e.currentTarget));
+                this.elements.downloadButton.addEventListener('click', () => this.downloadAllNotes());
+                this.elements.searchInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
+                this.elements.languageSelect.addEventListener('change', () => this.updateLanguage());
+                this.elements.transcriptTextarea.addEventListener('input', () => this.updateLiveWordCount());
+                
+                this.elements.modalClose.addEventListener('click', () => this.closeEditModal());
+                this.elements.saveEditButton.addEventListener('click', () => this.saveEditedNote());
+                this.elements.editModal.addEventListener('click', (e) => {
+                    if (e.target === this.elements.editModal) this.closeEditModal();
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space' && e.ctrlKey) {
+                        e.preventDefault();
+                        this.toggleRecording();
+                    }
+                    if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault();
+                        this.saveNote();
+                    }
+                    if (e.key === 'Escape') {
+                        this.closeEditModal();
+                    }
+                });
+            }
+
+            async toggleRecording() {
+                if (!this.recognition) return;
+
+                try {
+                    if (!this.isRecording) {
+                        // This will prompt for permission if not already granted.
+                        await navigator.mediaDevices.getUserMedia({ audio: true });
+                        this.recognition.lang = this.elements.languageSelect.value;
+                        this.recognition.start();
+                    } else {
+                        this.recognition.stop();
+                        this.isRecording = false; // Manually set state
+                        this.updateRecordingState();
+                        this.showStatus('Recording stopped');
+                    }
+                } catch (error) {
+                    this.showStatus('Microphone access denied', 'permission-denied');
+                    this.showToast('Please allow microphone access to use voice recording', 'error');
+                }
+            }
+
+            updateRecordingState() {
+                const button = this.elements.recordButton;
+                const icon = button.querySelector('i');
+                
+                if (this.isRecording) {
+                    button.classList.add('recording');
+                    icon.setAttribute('data-feather', 'square');
+                    button.title = 'Stop Recording (Ctrl+Space)';
+                } else {
+                    button.classList.remove('recording');
+                    icon.setAttribute('data-feather', 'mic');
+                    button.title = 'Start Recording (Ctrl+Space)';
+                }
+                feather.replace();
+            }
+
+            showStatus(message, type = '') {
+                this.elements.statusText.textContent = message;
+                const indicator = this.elements.statusIndicator;
+                indicator.className = `status-indicator ${type}`;
+                
+                const existingDot = indicator.querySelector('.pulse-dot');
+                if(existingDot) existingDot.remove();
+
+                if (type === 'listening') {
+                    const dot = document.createElement('div');
+                    dot.className = 'pulse-dot';
+                    indicator.appendChild(dot);
+                }
+            }
+
+            saveNote() {
+                const text = this.elements.transcriptTextarea.value.trim();
+                if (!text) {
+                    this.showToast('No text to save', 'error');
+                    return;
+                }
+
+                const note = {
+                    id: Date.now(),
+                    content: text,
+                    date: new Date(),
+                    wordCount: text.split(/\s+/).filter(word => word.length > 0).length
+                };
+
+                this.savedNotes.unshift(note);
+                this.saveToStorage();
+                this.renderNotes();
+                this.updateStats();
+                this.elements.transcriptTextarea.value = '';
+                this.updateLiveWordCount();
+                this.showToast('Note saved successfully', 'success');
+            }
+
+            clearTranscript() {
+                if (this.elements.transcriptTextarea.value.trim()) {
+                    if (confirm('Are you sure you want to clear the current text?')) {
+                        this.elements.transcriptTextarea.value = '';
+                        this.updateLiveWordCount();
+                        this.showToast('Text cleared', 'success');
+                    }
+                }
+            }
+            
+            buttonTransition(button, iconName = 'check', text = 'Copied!', duration = 2000) {
+                const originalIcon = button.querySelector('i').getAttribute('data-feather');
+                const originalText = button.querySelector('span')?.textContent;
+
+                button.classList.add('success');
+                button.querySelector('i').setAttribute('data-feather', iconName);
+                if (button.querySelector('span')) {
+                    button.querySelector('span').textContent = text;
+                }
+                feather.replace();
+
+                setTimeout(() => {
+                    button.classList.remove('success');
+                    button.querySelector('i').setAttribute('data-feather', originalIcon);
+                     if (button.querySelector('span')) {
+                        button.querySelector('span').textContent = originalText;
+                    }
+                    feather.replace();
+                }, duration);
+            }
+
+            async copyTranscript(buttonElement) {
+                const text = this.elements.transcriptTextarea.value.trim();
+                if (!text) {
+                    this.showToast('No text to copy', 'error');
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(text);
+                    this.showToast('Text copied to clipboard', 'success');
+                    this.buttonTransition(buttonElement, 'check', 'Copied!');
+                } catch (error) {
+                    this.showToast('Failed to copy text', 'error');
+                }
+            }
+
+            downloadAllNotes() {
+                if (this.savedNotes.length === 0) {
+                    this.showToast('No notes to download', 'error');
+                    return;
+                }
+
+                const content = this.savedNotes.map((note, index) => {
+                    const date = new Date(note.date).toLocaleString();
+                    return `Note ${index + 1} (${date})\n${'='.repeat(50)}\n${note.content}\n\n`;
+                }).join('');
+
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `voicescribe-notes-${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                this.showToast('Notes downloaded successfully', 'success');
+            }
+
+            handleSearch(query) {
+                clearTimeout(this.searchTimeout);
+                this.searchTimeout = setTimeout(() => {
+                    this.renderNotes(query.toLowerCase());
+                }, 300);
+            }
+
+            renderNotes(searchQuery = '') {
+                const filteredNotes = searchQuery 
+                    ? this.savedNotes.filter(note => 
+                        note.content.toLowerCase().includes(searchQuery))
+                    : this.savedNotes;
+
+                if (filteredNotes.length === 0) {
+                    this.elements.notesGrid.innerHTML = searchQuery 
+                        ? '<div class="empty-state"><div class="empty-state-icon"><i data-feather="search"></i></div><h3>No matching notes</h3><p>Try a different search term</p></div>'
+                        : '<div class="empty-state" id="emptyState"><div class="empty-state-icon"><i data-feather="mic-off"></i></div><h3>No notes yet</h3><p>Start recording to create your first note</p></div>';
+                    feather.replace();
+                    return;
+                }
+
+                this.elements.notesGrid.innerHTML = filteredNotes.map((note) => {
+                    const originalIndex = this.savedNotes.findIndex(n => n.id === note.id);
+                    const date = new Date(note.date).toLocaleDateString();
+                    const time = new Date(note.date).toLocaleTimeString([], { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
+                    const preview = note.content.length > 150 
+                        ? note.content.substring(0, 150) + '...' 
+                        : note.content;
+
+                    return `
+                        <div class="note-card" data-index="${originalIndex}">
+                            <div class="note-meta">
+                                <div class="note-date">
+                                    <i data-feather="calendar"></i>
+                                    <span>${date} at ${time}</span>
+                                </div>
+                                <div class="note-actions">
+                                    <button class="note-action" onclick="app.copyNote(event, ${originalIndex})">
+                                        <i data-feather="copy"></i>
+                                        <span>Copy</span>
+                                    </button>
+                                     <button class="note-action" onclick="app.downloadSingleNote(${originalIndex})">
+                                        <i data-feather="download"></i>
+                                        <span>Save</span>
+                                    </button>
+                                    <button class="note-action" onclick="app.editNote(${originalIndex})">
+                                        <i data-feather="edit-3"></i>
+                                        <span>Edit</span>
+                                    </button>
+                                    <button class="note-action delete" onclick="app.deleteNote(${originalIndex})">
+                                        <i data-feather="trash-2"></i>
+                                        <span>Delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="note-content">${this.highlightSearchTerm(preview, searchQuery)}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                feather.replace();
+            }
+
+            highlightSearchTerm(text, searchQuery) {
+                if (!searchQuery) return text;
+                const regex = new RegExp(`(${searchQuery})`, 'gi');
+                return text.replace(regex, '<mark style="background: var(--accent-1); color: black; padding: 2px 4px; border-radius: 4px;">$1</mark>');
+            }
+
+            async copyNote(event, index) {
+                try {
+                    await navigator.clipboard.writeText(this.savedNotes[index].content);
+                    this.showToast('Note copied to clipboard', 'success');
+                    this.buttonTransition(event.currentTarget, 'check', 'Copied!');
+                } catch (error) {
+                    this.showToast('Failed to copy note', 'error');
+                }
+            }
+            
+            downloadSingleNote(index) {
+                const note = this.savedNotes[index];
+                const date = new Date(note.date).toLocaleString();
+                const content = `Note from ${date}\n${'='.repeat(50)}\n${note.content}`;
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `voicescribe-note-${note.id}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            editNote(index) {
+                this.currentEditIndex = index;
+                this.elements.editTextarea.value = this.savedNotes[index].content;
+                this.elements.editModal.classList.add('active');
+                this.elements.editTextarea.focus();
+            }
+
+            deleteNote(index) {
+                if (confirm('Are you sure you want to delete this note?')) {
+                    this.savedNotes.splice(index, 1);
+                    this.saveToStorage();
+                    this.renderNotes(this.elements.searchInput.value);
+                    this.updateStats();
+                    this.showToast('Note deleted successfully', 'success');
+                }
+            }
+
+            closeEditModal() {
+                this.elements.editModal.classList.remove('active');
+                this.currentEditIndex = -1;
+            }
+
+            saveEditedNote() {
+                if (this.currentEditIndex === -1) return;
+
+                const newContent = this.elements.editTextarea.value.trim();
+                if (!newContent) {
+                    this.showToast('Note cannot be empty', 'error');
+                    return;
+                }
+
+                this.savedNotes[this.currentEditIndex].content = newContent;
+                this.savedNotes[this.currentEditIndex].wordCount = 
+                    newContent.split(/\s+/).filter(word => word.length > 0).length;
+                
+                this.saveToStorage();
+                this.renderNotes(this.elements.searchInput.value);
+                this.updateStats();
+                this.closeEditModal();
+                this.showToast('Note updated successfully', 'success');
+            }
+
+            updateLanguage() {
+                if (this.recognition) {
+                    const wasRecording = this.isRecording;
+                    if(wasRecording) this.recognition.stop();
+                    this.recognition.lang = this.elements.languageSelect.value;
+                    if(wasRecording) this.recognition.start();
+                }
+            }
+
+            updateStats() {
+                const noteCount = this.savedNotes.length;
+                const totalWords = this.savedNotes.reduce((sum, note) => sum + note.wordCount, 0);
+                
+                this.elements.noteCount.textContent = `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`;
+                this.elements.wordCount.textContent = `${totalWords.toLocaleString()} words`;
+            }
+            
+            updateLiveWordCount() {
+                const text = this.elements.transcriptTextarea.value;
+                const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+                this.elements.liveWordCount.textContent = `${wordCount} words`;
+            }
+
+            saveToStorage() {
+                localStorage.setItem('voicescribe_notes', JSON.stringify(this.savedNotes));
+            }
+
+            showToast(message, type = 'success') {
+                const toast = this.elements.toast;
+                const toastText = this.elements.toastText;
+                const icon = toast.querySelector('i');
+
+                toast.className = `toast ${type}`;
+                toastText.textContent = message;
+                
+                if (type === 'success') {
+                    icon.setAttribute('data-feather', 'check-circle');
+                } else if (type === 'error') {
+                    icon.setAttribute('data-feather', 'alert-circle');
+                } else {
+                    icon.setAttribute('data-feather', 'info');
+                }
+
+                feather.replace();
+                toast.classList.add('show');
+
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+
+            createFloatingParticles() {
+                const container = document.getElementById('particles');
+                const particleCount = 50;
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 20 + 's';
+                    particle.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                    container.appendChild(particle);
+                }
+            }
+        }
+
+        const app = new Voicescribe();
+    </script>
+</body>
+</html>
