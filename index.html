@@ -1075,23 +1075,27 @@
             }
 
             async toggleRecording() {
+                console.log('toggleRecording called');
                 if (!this.recognition) return;
 
+                if (this.isRecording) {
+                    this.recognition.stop();
+                    return;
+                }
+
                 try {
-                    if (!this.isRecording) {
-                        // This will prompt for permission if not already granted.
-                        await navigator.mediaDevices.getUserMedia({ audio: true });
-                        this.recognition.lang = this.elements.languageSelect.value;
-                        this.recognition.start();
-                    } else {
-                        this.recognition.stop();
-                        this.isRecording = false; // Manually set state
-                        this.updateRecordingState();
-                        this.showStatus('Recording stopped');
-                    }
+                    await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.recognition.lang = this.elements.languageSelect.value;
+                    this.recognition.start();
                 } catch (error) {
-                    this.showStatus('Microphone access denied', 'permission-denied');
-                    this.showToast('Please allow microphone access to use voice recording', 'error');
+                    console.error("Error getting media devices.", error);
+                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                        this.showStatus('Microphone access denied', 'permission-denied');
+                        this.showToast('Please allow microphone access to use voice recording.', 'error');
+                    } else {
+                        this.showStatus('Error starting recording', 'error');
+                        this.showToast('Could not start recording. Please check your microphone.', 'error');
+                    }
                 }
             }
 
