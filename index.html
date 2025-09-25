@@ -928,7 +928,6 @@
 
                 this.initializeElements();
                 this.initializeSpeechRecognition();
-                this.checkMicrophonePermission();
                 this.bindEvents();
                 this.renderNotes();
                 this.createFloatingParticles();
@@ -976,11 +975,9 @@
                     };
 
                     this.recognition.onend = () => {
-                        if (this.isRecording) { // Prevents state change if stopped manually
-                            this.isRecording = false;
-                            this.updateRecordingState();
-                            this.showStatus('Ready to record');
-                        }
+                        this.isRecording = false;
+                        this.updateRecordingState();
+                        this.showStatus('Ready to record');
                     };
 
                     this.recognition.onresult = (event) => {
@@ -1023,25 +1020,6 @@
                 }
             }
             
-            async checkMicrophonePermission() {
-                if (!navigator.permissions) return;
-                try {
-                    const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-                    if (permissionStatus.state === 'denied') {
-                        this.showStatus('Mic permission denied', 'permission-denied');
-                        this.showToast('Enable microphone in settings to use recording', 'error');
-                    }
-                    permissionStatus.onchange = () => {
-                        if (permissionStatus.state === 'denied') {
-                             this.showStatus('Mic permission denied', 'permission-denied');
-                        } else if (permissionStatus.state === 'granted') {
-                             this.showStatus('Ready to record');
-                        }
-                    };
-                } catch (error) {
-                    console.error("Could not check microphone permission:", error);
-                }
-            }
 
             bindEvents() {
                 this.elements.recordButton.addEventListener('click', () => this.toggleRecording());
@@ -1075,7 +1053,6 @@
             }
 
             async toggleRecording() {
-                console.log('toggleRecording called');
                 if (!this.recognition) return;
 
                 if (this.isRecording) {
@@ -1088,13 +1065,13 @@
                     this.recognition.lang = this.elements.languageSelect.value;
                     this.recognition.start();
                 } catch (error) {
-                    console.error("Error getting media devices.", error);
+                    console.error("Error during recording setup:", error);
                     if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                        this.showStatus('Microphone access denied', 'permission-denied');
-                        this.showToast('Please allow microphone access to use voice recording.', 'error');
+                        this.showStatus('Permission Denied', 'permission-denied');
+                        this.showToast('Microphone access was denied. Please enable it in your browser\'s site settings.', 'error');
                     } else {
-                        this.showStatus('Error starting recording', 'error');
-                        this.showToast('Could not start recording. Please check your microphone.', 'error');
+                        this.showStatus('Error', 'error');
+                        this.showToast(`An error occurred: ${error.name}. Please check your microphone.`, 'error');
                     }
                 }
             }
