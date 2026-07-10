@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>EchoNote</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --bg-2: #0b1628;
+      --panel: rgba(15, 23, 42, 0.78);
+      --panel-solid: #0f172a;
+      --card: rgba(17, 24, 39, 0.72);
+      --card-2: #111c31;
+      --line: rgba(148, 163, 184, 0.18);
+      --line-strong: rgba(125, 211, 252, 0.32);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --soft: #cbd5e1;
+      --cyan: #22d3ee;
+      --blue: #38bdf8;
+      --violet: #8b5cf6;
+      --pink: #ec4899;
+      --green: #34d399;
+      --amber: #fbbf24;
+      --red: #fb7185;
+      --shadow: 0 24px 80px rgba(0,0,0,.42);
+      --shadow-soft: 0 14px 38px rgba(0,0,0,.26);
+      --radius-lg: 28px;
+      --radius: 18px;
+      --radius-sm: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(34, 211, 238, .18), transparent 34rem),
+        radial-gradient(circle at 92% 8%, rgba(139, 92, 246, .18), transparent 30rem),
+        radial-gradient(circle at 60% 100%, rgba(236, 72, 153, .12), transparent 30rem),
+        var(--bg);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 80%);
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .app {
+      width: min(1220px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 22px 0 42px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .logo {
+      width: 46px; height: 46px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--cyan), var(--violet));
+      display: grid; place-items: center;
+      box-shadow: 0 16px 45px rgba(34, 211, 238, .22);
+      flex: 0 0 auto;
+    }
+    .logo svg { width: 27px; height: 27px; }
+    h1 { margin: 0; font-size: clamp(1.55rem, 3vw, 2.35rem); letter-spacing: -.055em; line-height: 1; }
+    .subtitle { color: var(--muted); margin: 4px 0 0; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .top-actions { display: flex; gap: 10px; align-items: center; }
+    .kbd-pill {
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .72);
+      color: var(--soft);
+      border-radius: 999px;
+      padding: 9px 12px;
+      display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer;
+      transition: .22s ease;
+    }
+    .kbd-pill:hover { border-color: var(--cyan); color: white; transform: translateY(-1px); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(360px, .88fr) minmax(440px, 1.12fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(15, 23, 42, .84), rgba(15, 23, 42, .62));
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(22px);
+      overflow: hidden;
+    }
+
+    .record-panel { position: sticky; top: 16px; }
+    .panel-inner { padding: 18px; }
+
+    .quick-row { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; }
+    select, .input, .search, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(2, 6, 23, .36);
+      border-radius: 15px;
+      outline: none;
+      transition: .22s ease;
+    }
+    select, .input, .search { min-height: 46px; padding: 0 14px; }
+    select:focus, .input:focus, .search:focus, textarea:focus { border-color: var(--cyan); box-shadow: 0 0 0 4px rgba(34,211,238,.11); }
+
+    .record-zone {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+      margin: 16px 0;
+      padding: 14px;
+      background: rgba(2, 6, 23, .32);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+    }
+
+    .record-btn {
+      width: 88px; height: 88px; border-radius: 28px;
+      border: 0;
+      background: linear-gradient(135deg, var(--cyan), var(--blue) 48%, var(--violet));
+      color: #00121b;
+      display: grid; place-items: center;
+      cursor: pointer;
+      box-shadow: 0 18px 50px rgba(34, 211, 238, .25);
+      transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+    }
+    .record-btn:hover { transform: translateY(-2px) scale(1.02); filter: brightness(1.06); }
+    .record-btn.recording {
+      background: linear-gradient(135deg, #fb7185, #ec4899, #8b5cf6);
+      color: white;
+      animation: breathe 1.4s infinite;
+      box-shadow: 0 0 0 10px rgba(251,113,133,.08), 0 20px 60px rgba(236,72,153,.32);
+    }
+    @keyframes breathe { 50% { transform: scale(1.035); } }
+    .record-btn svg { width: 36px; height: 36px; }
+
+    .status h2 { margin: 0; font-size: 1.05rem; letter-spacing: -.02em; }
+    .status p { margin: 5px 0 0; color: var(--muted); font-size: .9rem; line-height: 1.35; }
+    .timer {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 10px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      color: var(--cyan);
+      background: rgba(34,211,238,.08);
+      border: 1px solid rgba(34,211,238,.18);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .wave-card { padding: 12px; background: rgba(2,6,23,.28); border: 1px solid var(--line); border-radius: 18px; }
+    canvas { display: block; width: 100%; height: 86px; border-radius: 14px; background: #07111f; }
+
+    .audio-strip {
+      margin-top: 12px;
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      background: rgba(2,6,23,.28);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+    audio { width: 100%; height: 38px; accent-color: var(--cyan); }
+    .audio-meta { font-size: .82rem; color: var(--muted); }
+
+    .transcript-card { margin-top: 14px; }
+    .label-row { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin: 0 0 8px; color: var(--muted); font-size: .86rem; }
+    textarea {
+      min-height: 180px;
+      resize: vertical;
+      padding: 15px;
+      line-height: 1.55;
+      border-radius: 20px;
+      background: rgba(2, 6, 23, .38);
+    }
+
+    .actions, .tool-actions, .note-actions, .toolbar-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+    .btn {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 0 13px;
+      color: var(--text);
+      background: rgba(15, 23, 42, .7);
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer;
+      transition: .2s ease;
+      font-weight: 650;
+    }
+    .btn:hover:not(:disabled) { border-color: var(--cyan); transform: translateY(-1px); background: rgba(34, 211, 238, .1); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+    .btn.primary { border: 0; background: linear-gradient(135deg, var(--cyan), var(--violet)); color: white; box-shadow: 0 14px 32px rgba(34, 211, 238, .18); }
+    .btn.danger:hover { border-color: var(--red); background: rgba(251, 113, 133, .1); }
+    .btn.slim { min-height: 34px; border-radius: 999px; padding: 0 11px; font-size: .84rem; }
+    .btn svg { width: 17px; height: 17px; }
+
+    .primary-actions { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .secondary-actions { margin-top: 9px; }
+
+    details.tools {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      background: rgba(2, 6, 23, .25);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    details.tools > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 13px 15px;
+      color: var(--soft);
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    details.tools > summary::-webkit-details-marker { display: none; }
+    .tools-body { padding: 0 13px 13px; display: grid; gap: 11px; }
+    .tool-group { display: grid; gap: 7px; }
+    .tool-title { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+
+    .notes-panel .panel-inner { padding: 16px; }
+    .notes-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .notes-head h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.04em; }
+    .stats { color: var(--muted); font-size: .86rem; margin-top: 4px; }
+    .toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .view-toggle { display: flex; background: rgba(2,6,23,.32); border: 1px solid var(--line); padding: 4px; border-radius: 15px; }
+    .view-toggle button { border: 0; background: transparent; color: var(--muted); padding: 8px 10px; border-radius: 11px; cursor: pointer; font-weight: 700; }
+    .view-toggle button.active { color: #06111f; background: var(--cyan); }
+
+    .filter-chip {
+      display: none;
+      margin-bottom: 10px;
+      width: fit-content;
+      max-width: 100%;
+      padding: 8px 10px;
+      border: 1px solid rgba(34,211,238,.28);
+      color: var(--cyan);
+      background: rgba(34,211,238,.08);
+      border-radius: 999px;
+      gap: 8px; align-items: center;
+      font-size: .88rem;
+    }
+    .filter-chip.show { display: inline-flex; }
+    .filter-chip button { border: 0; background: transparent; color: inherit; cursor: pointer; font-size: 1rem; }
+
+    .notes-grid { display: grid; gap: 12px; }
+    @keyframes noteIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .note {
+      background: linear-gradient(180deg, rgba(17, 24, 39, .86), rgba(15, 23, 42, .72));
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+      animation: noteIn .42s cubic-bezier(.2,.8,.2,1) both;
+      transition: .22s ease;
+    }
+    .note:hover { border-color: var(--line-strong); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+    .note-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 9px; }
+    .date { color: var(--muted); font-size: .82rem; }
+    .note-text {
+      line-height: 1.52;
+      color: var(--soft);
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px dashed transparent;
+      border-radius: 14px;
+      padding: 8px;
+      margin: -8px;
+      cursor: text;
+    }
+    .note-text:hover { border-color: rgba(34,211,238,.26); background: rgba(34,211,238,.045); }
+    .note-text:focus { outline: none; border-color: var(--cyan); background: rgba(34,211,238,.08); box-shadow: 0 0 0 4px rgba(34,211,238,.08); }
+    .note-hint { color: var(--muted); font-size: .76rem; margin-top: 8px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .tag {
+      border: 1px solid rgba(139,92,246,.3);
+      background: rgba(139,92,246,.12);
+      color: #ddd6fe;
+      border-radius: 999px;
+      padding: 6px 9px;
+      cursor: pointer;
+      font-size: .8rem;
+      font-weight: 750;
+    }
+    .tag:hover, .tag.active { background: var(--violet); color: white; }
+
+    .notes-grid.list .note { padding: 10px 12px; border-radius: 15px; }
+    .notes-grid.list .note-top { margin-bottom: 4px; }
+    .notes-grid.list .note-text { max-height: 3.15em; overflow: hidden; line-height: 1.42; }
+    .notes-grid.list .note-text:focus { max-height: none; overflow: visible; }
+    .notes-grid.list .note-hint { display: none; }
+    .notes-grid.list .tags { margin-top: 8px; }
+
+    .empty { text-align: center; padding: 42px 18px; color: var(--muted); border: 1px dashed var(--line); border-radius: 20px; }
+    .empty svg { width: 42px; height: 42px; color: var(--cyan); opacity: .8; }
+    .empty h3 { color: var(--text); margin: 12px 0 4px; }
+    mark { background: rgba(34,211,238,.95); color: #06111f; border-radius: 5px; padding: 0 3px; }
+
+    .toast {
+      position: fixed;
+      right: 18px; bottom: calc(18px + var(--safe-bottom));
+      z-index: 100;
+      max-width: min(360px, calc(100vw - 36px));
+      padding: 13px 15px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(15, 23, 42, .92);
+      box-shadow: var(--shadow-soft);
+      color: var(--text);
+      transform: translateY(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: .25s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { border-color: rgba(251,113,133,.45); }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(2, 6, 23, .72);
+      backdrop-filter: blur(16px);
+      padding: 20px;
+      place-items: center;
+    }
+    .overlay.show { display: grid; }
+    .shortcut-card {
+      width: min(540px, 100%);
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: var(--panel-solid);
+      box-shadow: var(--shadow);
+      padding: 20px;
+    }
+    .shortcut-card header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .shortcut-card h3 { margin: 0; font-size: 1.25rem; }
+    .shortcut { display: flex; justify-content: space-between; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); color: var(--soft); }
+    .shortcut:last-child { border-bottom: 0; }
+    kbd { display: inline-block; padding: 4px 7px; border-radius: 8px; border: 1px solid var(--line); background: rgba(2,6,23,.5); color: white; font-size: .82rem; }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .record-panel { position: static; }
+      textarea { min-height: 150px; }
+    }
+
+    @media (max-width: 620px) {
+      .app { width: min(100% - 20px, 1220px); padding-top: 12px; padding-bottom: 20px; }
+      .topbar { align-items: flex-start; margin-bottom: 12px; }
+      .subtitle { white-space: normal; font-size: .84rem; }
+      .logo { width: 40px; height: 40px; border-radius: 13px; }
+      .kbd-pill span { display: none; }
+      .panel { border-radius: 22px; }
+      .panel-inner { padding: 12px; }
+      .quick-row { grid-template-columns: 1fr; }
+      .record-zone { grid-template-columns: 76px 1fr; gap: 11px; padding: 11px; margin: 12px 0; }
+      .record-btn { width: 76px; height: 76px; border-radius: 24px; }
+      .record-btn svg { width: 30px; height: 30px; }
+      canvas { height: 68px; }
+      textarea { min-height: 132px; }
+      .primary-actions { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr; }
+      .notes-head { flex-direction: column; align-items: stretch; }
+      .note-top { align-items: flex-start; flex-direction: column; }
+      .note-actions { width: 100%; }
+      .btn.slim { flex: 1; }
+      .toast { left: 10px; right: 10px; bottom: calc(10px + var(--safe-bottom)); max-width: none; }
+    }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 12h2l2-7 4 14 4-14 2 7h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 0 0-8 0v4a4 4 0 0 0 4 4Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4M8 21h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 3v6h8V3M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path d="M8 8h11v11H8zM5 16H4V4h12v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.7 9a2.5 2.5 0 1 1 4.3 1.7c-.9.7-1.6 1.2-1.6 2.3M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  </svg>
+
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo"><svg><use href="#i-wave"></use></svg></div>
+        <div>
+          <h1>EchoNote</h1>
+          <p class="subtitle">Record, transcribe, clean, tag, and find notes fast.</p>
+        </div>
+      </div>
+      <button id="shortcutBtn" class="kbd-pill" type="button" title="Keyboard shortcuts: Ctrl + /">
+        <svg width="18" height="18"><use href="#i-help"></use></svg><span>Shortcuts</span>
+      </button>
+    </header>
+
+    <section class="layout">
+      <section class="panel record-panel" aria-label="Recorder and transcript">
+        <div class="panel-inner">
+          <div class="quick-row">
+            <select id="languageSelect" aria-label="Transcription language">
+              <option value="en-US">🇺🇸 English (US)</option><option value="en-GB">🇬🇧 English (UK)</option>
+              <option value="hi-IN">🇮🇳 हिन्दी (Hindi)</option><option value="es-ES">🇪🇸 Español</option>
+              <option value="fr-FR">🇫🇷 Français</option><option value="de-DE">🇩🇪 Deutsch</option>
+              <option value="it-IT">🇮🇹 Italiano</option><option value="pt-BR">🇧🇷 Português</option>
+              <option value="ja-JP">🇯🇵 日本語</option><option value="ko-KR">🇰🇷 한국어</option>
+              <option value="zh-CN">🇨🇳 中文</option><option value="ar-SA">🇸🇦 العربية</option>
+            </select>
+            <button id="timestampBtn" class="btn" type="button"><svg><use href="#i-clock"></use></svg>Timestamp</button>
+          </div>
+
+          <div class="record-zone">
+            <button id="recordBtn" class="record-btn" type="button" title="Ctrl + Space">
+              <svg id="recordIcon"><use href="#i-mic"></use></svg>
+            </button>
+            <div class="status">
+              <h2 id="statusTitle">Ready when you are</h2>
+              <p id="statusText">Tap record. Audio playback and waveform are browser-native.</p>
+              <span class="timer" id="timer">00:00</span>
+            </div>
+          </div>
+
+          <div class="wave-card"><canvas id="waveCanvas" width="720" height="120"></canvas></div>
+
+          <div class="audio-strip">
+            <div class="audio-meta" id="audioMeta">No recording saved yet</div>
+            <audio id="audioPlayer" controls></audio>
+            <div class="actions">
+              <button id="downloadAudioBtn" class="btn slim" type="button" disabled><svg><use href="#i-down"></use></svg>Audio</button>
+              <button id="clearAudioBtn" class="btn slim danger" type="button" disabled><svg><use href="#i-trash"></use></svg>Clear</button>
+            </div>
+          </div>
+
+          <div class="transcript-card">
+            <div class="label-row"><strong>Transcript</strong><span id="wordCountLive">0 words</span></div>
+            <textarea id="transcript" placeholder="Your transcription appears here. The duplicate sentence bug is fixed: final recognition results are de-duplicated before insertion."></textarea>
+          </div>
+
+          <div class="label-row" style="margin-top:10px"><strong>Tags</strong><span>Optional</span></div>
+          <input id="tagInput" class="input" placeholder="#work #personal, ideas" />
+
+          <div class="primary-actions">
+            <button id="saveBtn" class="btn primary" type="button"><svg><use href="#i-save"></use></svg>Save note</button>
+            <button id="copyBtn" class="btn" type="button"><svg><use href="#i-copy"></use></svg>Copy text</button>
+          </div>
+          <div class="secondary-actions actions">
+            <button id="clearTextBtn" class="btn slim danger" type="button"><svg><use href="#i-trash"></use></svg>Clear text</button>
+            <button id="exportAllBtn" class="btn slim" type="button"><svg><use href="#i-down"></use></svg>Export notes</button>
+          </div>
+
+          <details class="tools">
+            <summary>Text tools <span>⌄</span></summary>
+            <div class="tools-body">
+              <div class="tool-group">
+                <div class="tool-title">Clean up</div>
+                <div class="tool-actions"><button id="cleanBtn" class="btn slim" type="button">Fix spacing & stutters</button></div>
+              </div>
+              <div class="tool-group">
+                <div class="tool-title">Format</div>
+                <div class="tool-actions">
+                  <button id="listBtn" class="btn slim" type="button">Bullets</button>
+                  <button id="upperBtn" class="btn slim" type="button">UPPER</button>
+                  <button id="lowerBtn" class="btn slim" type="button">lower</button>
+                  <button id="sentenceBtn" class="btn slim" type="button">Sentence</button>
+                  <button id="checkBtn" class="btn slim" type="button">☐ Checklist</button>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel notes-panel" aria-label="Saved notes">
+        <div class="panel-inner">
+          <div class="notes-head">
+            <div><h2>Saved Notes</h2><div class="stats"><span id="noteCount">0 notes</span> · <span id="savedWordCount">0 words</span></div></div>
+            <div class="view-toggle" aria-label="View mode"><button id="cardViewBtn" type="button">Cards</button><button id="listViewBtn" type="button">List</button></div>
+          </div>
+          <div class="toolbar">
+            <input id="searchInput" class="search" placeholder="Search notes or tags…" />
+            <button id="clearSearchBtn" class="btn" type="button"><svg><use href="#i-search"></use></svg>Reset</button>
+          </div>
+          <div id="filterChip" class="filter-chip">Filtering by <strong id="filterText">#tag</strong><button id="clearFilterBtn" type="button">×</button></div>
+          <div id="notesGrid" class="notes-grid"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="shortcutOverlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="shortcut-card">
+      <header><h3>Keyboard shortcuts</h3><button id="closeShortcuts" class="btn slim" type="button">Close</button></header>
+      <div class="shortcut"><span>Start / stop recording</span><span><kbd>Ctrl</kbd> + <kbd>Space</kbd></span></div>
+      <div class="shortcut"><span>Save transcript</span><span><kbd>Ctrl</kbd> + <kbd>S</kbd></span></div>
+      <div class="shortcut"><span>Show shortcuts</span><span><kbd>Ctrl</kbd> + <kbd>/</kbd></span></div>
+      <div class="shortcut"><span>Close overlay / cancel inline edit</span><span><kbd>Esc</kbd></span></div>
+      <div class="shortcut"><span>Save inline edit</span><span>Click outside or <kbd>Ctrl</kbd> + <kbd>Enter</kbd></span></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    class EchoNote {
+      constructor() {
+        this.recognition = null;
+        this.isRecording = false;
+        this.stream = null;
+        this.mediaRecorder = null;
+        this.audioChunks = [];
+        this.audioContext = null;
+        this.analyser = null;
+        this.animationId = null;
+        this.recordingStartedAt = 0;
+        this.timerInterval = null;
+        this.currentDuration = 0;
+        this.processedFinals = new Set();
+        this.notes = this.safeJson('echonote_notes', []);
+        if (!this.notes.length) {
+          this.notes = this.safeJson('voicescribe_notes', []).map(n => ({
+            id: n.id || Date.now(),
+            content: n.content || '',
+            tags: Array.isArray(n.tags) ? n.tags : [],
+            date: n.date || new Date().toISOString(),
+            wordCount: n.wordCount || this.wordCount(n.content || '')
+          })).filter(n => n.content);
+          if (this.notes.length) localStorage.setItem('echonote_notes', JSON.stringify(this.notes));
+        }
+        this.recordings = this.safeJson('echonote_recordings', []);
+        this.latestAudio = this.recordings[0] || null;
+        this.viewMode = localStorage.getItem('echonote_view') || 'card';
+        this.activeTag = '';
+        this.inlineOriginal = '';
+        this.mimeType = this.supportedMimeType();
+        this.$();
+        this.initSpeechRecognition();
+        this.bind();
+        this.drawIdleWave();
+        this.renderAudio();
+        this.renderNotes();
+        this.updateLiveCount();
+      }
+
+      $() {
+        const id = x => document.getElementById(x);
+        this.el = {
+          language: id('languageSelect'), record: id('recordBtn'), recordIcon: id('recordIcon'), statusTitle: id('statusTitle'), statusText: id('statusText'), timer: id('timer'),
+          canvas: id('waveCanvas'), audio: id('audioPlayer'), audioMeta: id('audioMeta'), downloadAudio: id('downloadAudioBtn'), clearAudio: id('clearAudioBtn'),
+          transcript: id('transcript'), wordLive: id('wordCountLive'), tagInput: id('tagInput'), save: id('saveBtn'), copy: id('copyBtn'), clearText: id('clearTextBtn'), exportAll: id('exportAllBtn'), timestamp: id('timestampBtn'),
+          clean: id('cleanBtn'), list: id('listBtn'), upper: id('upperBtn'), lower: id('lowerBtn'), sentence: id('sentenceBtn'), check: id('checkBtn'),
+          search: id('searchInput'), clearSearch: id('clearSearchBtn'), notesGrid: id('notesGrid'), noteCount: id('noteCount'), savedWordCount: id('savedWordCount'), cardView: id('cardViewBtn'), listView: id('listViewBtn'),
+          filterChip: id('filterChip'), filterText: id('filterText'), clearFilter: id('clearFilterBtn'), shortcutBtn: id('shortcutBtn'), overlay: id('shortcutOverlay'), closeShortcuts: id('closeShortcuts'), toast: id('toast')
+        };
+      }
+
+      bind() {
+        this.el.record.addEventListener('click', () => this.toggleRecording());
+        this.el.transcript.addEventListener('input', () => this.updateLiveCount());
+        this.el.save.addEventListener('click', () => this.saveNote());
+        this.el.copy.addEventListener('click', () => this.copyTranscript());
+        this.el.clearText.addEventListener('click', () => this.clearTranscript());
+        this.el.exportAll.addEventListener('click', () => this.exportAllNotes());
+        this.el.timestamp.addEventListener('click', () => this.insertTimestamp());
+        this.el.downloadAudio.addEventListener('click', () => this.downloadLatestAudio());
+        this.el.clearAudio.addEventListener('click', () => this.clearLatestAudio());
+        this.el.clean.addEventListener('click', () => this.cleanText());
+        this.el.list.addEventListener('click', () => this.toList());
+        this.el.upper.addEventListener('click', () => this.setCase('upper'));
+        this.el.lower.addEventListener('click', () => this.setCase('lower'));
+        this.el.sentence.addEventListener('click', () => this.setCase('sentence'));
+        this.el.check.addEventListener('click', () => this.checklist());
+        this.el.search.addEventListener('input', () => this.renderNotes());
+        this.el.clearSearch.addEventListener('click', () => { this.el.search.value = ''; this.activeTag = ''; this.renderNotes(); });
+        this.el.clearFilter.addEventListener('click', () => { this.activeTag = ''; this.renderNotes(); });
+        this.el.cardView.addEventListener('click', () => this.setView('card'));
+        this.el.listView.addEventListener('click', () => this.setView('list'));
+        this.el.shortcutBtn.addEventListener('click', () => this.toggleShortcuts());
+        this.el.closeShortcuts.addEventListener('click', () => this.toggleShortcuts(false));
+        this.el.overlay.addEventListener('click', e => { if (e.target === this.el.overlay) this.toggleShortcuts(false); });
+        document.addEventListener('keydown', e => {
+          if (e.ctrlKey && (e.code === 'Slash' || e.key === '/')) { e.preventDefault(); this.toggleShortcuts(); return; }
+          if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); this.toggleRecording(); return; }
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); this.saveNote(); return; }
+          if (e.key === 'Escape') this.toggleShortcuts(false);
+        });
+      }
+
+      initSpeechRecognition() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+          this.setStatus('Audio-only mode', 'Speech recognition is not supported here. Recording still works.');
+          return;
+        }
+        this.recognition = new SR();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = true;
+        this.recognition.maxAlternatives = 1;
+
+        this.recognition.onstart = () => {
+          this.isRecording = true;
+          this.updateRecordUI();
+          this.setStatus('Listening…', 'Speak naturally. Final phrases are de-duplicated before insertion.');
+        };
+        this.recognition.onend = () => this.stopAll(false);
+        this.recognition.onerror = e => {
+          this.toast(`Speech recognition: ${e.error}`, true);
+          this.stopAll(false);
+        };
+        this.recognition.onresult = event => this.handleSpeechResult(event);
+      }
+
+      handleSpeechResult(event) {
+        // Important duplicate fix: browsers can re-emit the same final result. We key each final
+        // result by index + normalized text and also check the existing textarea tail before appending.
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          if (!res.isFinal) continue;
+          const phrase = (res[0]?.transcript || '').trim().replace(/\s+/g, ' ');
+          if (!phrase) continue;
+          const key = `${i}:${phrase.toLowerCase()}`;
+          if (this.processedFinals.has(key)) continue;
+          this.processedFinals.add(key);
+          this.appendFinalPhrase(phrase);
+        }
+      }
+
+      appendFinalPhrase(phrase) {
+        const textarea = this.el.transcript;
+        const current = textarea.value.trimEnd();
+        const normalizedCurrent = current.toLowerCase().replace(/\s+/g, ' ');
+        const normalizedPhrase = phrase.toLowerCase().replace(/\s+/g, ' ');
+        if (normalizedCurrent.endsWith(normalizedPhrase)) return;
+        const needsSpace = current && !/[\s\n]$/.test(current) ? ' ' : '';
+        textarea.value = current + needsSpace + phrase + ' ';
+        textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+        this.updateLiveCount();
+      }
+
+      async toggleRecording() {
+        if (this.isRecording) { this.stopAll(true); return; }
+        try {
+          this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          this.startTimer();
+          this.startVisualizer(this.stream);
+          this.startRecorder(this.stream);
+          this.processedFinals.clear();
+          if (this.recognition) {
+            this.recognition.lang = this.el.language.value;
+            this.recognition.start();
+          } else {
+            this.isRecording = true;
+            this.updateRecordUI();
+            this.setStatus('Recording audio…', 'Speech-to-text unavailable in this browser.');
+          }
+        } catch (err) {
+          this.toast(err.name === 'NotAllowedError' ? 'Microphone permission denied.' : `Microphone error: ${err.name}`, true);
+          this.setStatus('Microphone unavailable', 'Please check browser permission and device settings.');
+          this.stopAll(false);
+        }
+      }
+
+      stopAll(stopRecognition) {
+        if (stopRecognition && this.recognition) { try { this.recognition.stop(); } catch {} }
+        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') { try { this.mediaRecorder.stop(); } catch {} }
+        if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+        if (this.audioContext) this.audioContext.close().catch(() => {});
+        this.audioContext = null; this.analyser = null;
+        this.stopTimer();
+        this.isRecording = false;
+        this.updateRecordUI();
+        this.drawIdleWave();
+        this.setStatus('Ready when you are', 'Tap record. Audio playback and waveform are browser-native.');
+      }
+
+      updateRecordUI() {
+        this.el.record.classList.toggle('recording', this.isRecording);
+        this.el.recordIcon.innerHTML = `<use href="${this.isRecording ? '#i-stop' : '#i-mic'}"></use>`;
+      }
+      setStatus(title, text) { this.el.statusTitle.textContent = title; this.el.statusText.textContent = text; }
+
+      supportedMimeType() {
+        if (!window.MediaRecorder) return '';
+        return ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/ogg'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+      }
+      startRecorder(stream) {
+        if (!window.MediaRecorder) return this.toast('MediaRecorder is not supported in this browser.', true);
+        this.audioChunks = [];
+        this.mediaRecorder = new MediaRecorder(stream, this.mimeType ? { mimeType: this.mimeType } : undefined);
+        this.mediaRecorder.ondataavailable = e => { if (e.data?.size) this.audioChunks.push(e.data); };
+        this.mediaRecorder.onstop = () => this.saveAudio();
+        this.mediaRecorder.start(1000);
+      }
+      saveAudio() {
+        if (!this.audioChunks.length) return;
+        const mimeType = this.mediaRecorder?.mimeType || this.mimeType || 'audio/webm';
+        const ext = mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const blob = new Blob(this.audioChunks, { type: mimeType });
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const item = { id: Date.now(), dataUrl: reader.result, mimeType, ext, size: blob.size, duration: this.currentDuration, date: new Date().toISOString(), name: `echonote-${new Date().toISOString().replace(/[:.]/g,'-')}.${ext}` };
+          this.latestAudio = item;
+          this.recordings.unshift(item);
+          this.recordings = this.recordings.slice(0, 4);
+          try { localStorage.setItem('echonote_recordings', JSON.stringify(this.recordings)); } catch { this.toast('Audio is playable, but LocalStorage is full. Download it.', true); }
+          this.renderAudio();
+        };
+        reader.readAsDataURL(blob);
+      }
+      renderAudio() {
+        const a = this.latestAudio;
+        this.el.audio.src = a?.dataUrl || '';
+        this.el.downloadAudio.disabled = !a;
+        this.el.clearAudio.disabled = !a;
+        this.el.audioMeta.textContent = a ? `${this.formatTime(a.duration || 0)} · ${this.bytes(a.size || 0)} · ${new Date(a.date).toLocaleString()}` : 'No recording saved yet';
+      }
+      downloadLatestAudio() { if (!this.latestAudio) return; this.downloadDataUrl(this.latestAudio.dataUrl, this.latestAudio.name); }
+      clearLatestAudio() { this.recordings = this.recordings.filter(r => r.id !== this.latestAudio?.id); this.latestAudio = this.recordings[0] || null; localStorage.setItem('echonote_recordings', JSON.stringify(this.recordings)); this.renderAudio(); }
+
+      startVisualizer(stream) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const canvas = this.el.canvas, ctx = canvas.getContext('2d');
+        this.audioContext = new AC();
+        this.analyser = this.audioContext.createAnalyser();
+        this.analyser.fftSize = 2048;
+        this.audioContext.createMediaStreamSource(stream).connect(this.analyser);
+        const data = new Uint8Array(this.analyser.fftSize);
+        const draw = () => {
+          this.animationId = requestAnimationFrame(draw);
+          this.analyser.getByteTimeDomainData(data);
+          const w = canvas.width, h = canvas.height;
+          ctx.clearRect(0,0,w,h);
+          const g = ctx.createLinearGradient(0,0,w,0); g.addColorStop(0,'#22d3ee'); g.addColorStop(.5,'#34d399'); g.addColorStop(1,'#8b5cf6');
+          ctx.fillStyle = '#07111f'; ctx.fillRect(0,0,w,h);
+          ctx.strokeStyle = 'rgba(148,163,184,.18)'; ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+          ctx.lineWidth = 3; ctx.strokeStyle = g; ctx.shadowColor = 'rgba(34,211,238,.45)'; ctx.shadowBlur = 12; ctx.beginPath();
+          const step = w / data.length;
+          for (let i=0, x=0; i<data.length; i++, x+=step) {
+            const y = (data[i] / 128) * h / 2;
+            i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+          }
+          ctx.stroke(); ctx.shadowBlur = 0;
+        };
+        draw();
+      }
+      drawIdleWave() {
+        const c = this.el.canvas, ctx = c.getContext('2d'), w = c.width, h = c.height;
+        ctx.clearRect(0,0,w,h); ctx.fillStyle = '#07111f'; ctx.fillRect(0,0,w,h);
+        ctx.strokeStyle = 'rgba(34,211,238,.38)'; ctx.lineWidth = 2; ctx.beginPath();
+        for (let x=0; x<=w; x+=8) { const y = h/2 + Math.sin(x/26)*9; x ? ctx.lineTo(x,y) : ctx.moveTo(x,y); }
+        ctx.stroke(); ctx.fillStyle='rgba(203,213,225,.55)'; ctx.font='15px system-ui'; ctx.textAlign='center'; ctx.fillText('Live waveform appears while recording', w/2, h/2 + 32);
+      }
+
+      startTimer() { this.recordingStartedAt = Date.now(); this.currentDuration = 0; this.setTimer(0); clearInterval(this.timerInterval); this.timerInterval = setInterval(() => { this.currentDuration = Math.floor((Date.now()-this.recordingStartedAt)/1000); this.setTimer(this.currentDuration); }, 250); }
+      stopTimer() { if (this.recordingStartedAt) this.currentDuration = Math.floor((Date.now()-this.recordingStartedAt)/1000); clearInterval(this.timerInterval); this.timerInterval = null; this.recordingStartedAt = 0; this.setTimer(this.currentDuration || 0); }
+      setTimer(s) { this.el.timer.textContent = this.formatTime(s); }
+      formatTime(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
+
+      insertTimestamp() { const s = this.isRecording && this.recordingStartedAt ? Math.floor((Date.now()-this.recordingStartedAt)/1000) : this.currentDuration || 0; this.insertAtCursor(`[${this.formatTime(s)}] `); }
+      insertAtCursor(text) { const t=this.el.transcript, a=t.selectionStart, b=t.selectionEnd; t.value=t.value.slice(0,a)+text+t.value.slice(b); t.focus(); t.selectionStart=t.selectionEnd=a+text.length; this.updateLiveCount(); }
+      updateLiveCount() { const n = this.wordCount(this.el.transcript.value); this.el.wordLive.textContent = `${n} ${n===1?'word':'words'}`; }
+      wordCount(text) { return text.trim() ? text.trim().split(/\s+/).length : 0; }
+
+      saveNote() {
+        const content = this.el.transcript.value.trim();
+        if (!content) return this.toast('No transcript to save.', true);
+        const tags = this.normalizeTags(this.el.tagInput.value, content);
+        this.notes.unshift({ id: Date.now(), content, tags, date: new Date().toISOString(), wordCount: this.wordCount(content) });
+        this.saveNotes();
+        this.el.transcript.value = ''; this.el.tagInput.value = ''; this.updateLiveCount(); this.renderNotes(); this.toast('Note saved.');
+      }
+      saveNotes() { localStorage.setItem('echonote_notes', JSON.stringify(this.notes)); }
+      normalizeTags(input='', content='') {
+        const found = content.match(/#[\p{L}\p{N}_-]+/gu) || [];
+        return [...new Set(`${input} ${found.join(' ')}`.split(/[\s,]+/).map(t => t.trim().replace(/^#+/,'').toLowerCase()).filter(Boolean).map(t => `#${t}`))];
+      }
+      noteTags(note) { return this.normalizeTags((note.tags || []).join(' '), note.content || ''); }
+      renderNotes() {
+        const q = this.el.search.value.trim().toLowerCase();
+        const filtered = this.notes.filter(note => {
+          const tags = this.noteTags(note); note.tags = tags;
+          return (!q || note.content.toLowerCase().includes(q) || tags.some(t => t.includes(q))) && (!this.activeTag || tags.includes(this.activeTag));
+        });
+        this.el.filterChip.classList.toggle('show', !!this.activeTag); this.el.filterText.textContent = this.activeTag || '#tag';
+        this.el.notesGrid.classList.toggle('list', this.viewMode === 'list'); this.el.cardView.classList.toggle('active', this.viewMode === 'card'); this.el.listView.classList.toggle('active', this.viewMode === 'list');
+        const totalWords = this.notes.reduce((s,n)=>s+(n.wordCount||this.wordCount(n.content||'')),0); this.el.noteCount.textContent = `${this.notes.length} ${this.notes.length===1?'note':'notes'}`; this.el.savedWordCount.textContent = `${totalWords} words`;
+        if (!filtered.length) { this.el.notesGrid.innerHTML = `<div class="empty"><svg><use href="#i-wave"></use></svg><h3>${this.notes.length ? 'No matches' : 'No notes yet'}</h3><p>${this.notes.length ? 'Try another search or clear the tag filter.' : 'Record or type a transcript, then save your first note.'}</p></div>`; return; }
+        this.el.notesGrid.innerHTML = filtered.map((note, i) => {
+          const index = this.notes.findIndex(n => n.id === note.id);
+          const text = this.highlight(note.content, q);
+          const tags = this.noteTags(note).map(tag => `<button class="tag ${this.activeTag===tag?'active':''}" type="button" onclick="app.filterTag('${tag}')">${this.escape(tag)}</button>`).join('');
+          return `<article class="note" style="animation-delay:${Math.min(i*55, 550)}ms">
+            <div class="note-top"><div class="date">${new Date(note.date).toLocaleString()}</div><div class="note-actions">
+              <button class="btn slim" onclick="app.copyNote(${index})" type="button"><svg><use href="#i-copy"></use></svg>Copy</button>
+              <button class="btn slim" onclick="app.downloadNote(${index})" type="button"><svg><use href="#i-down"></use></svg>Save</button>
+              <button class="btn slim danger" onclick="app.deleteNote(${index})" type="button"><svg><use href="#i-trash"></use></svg>Delete</button>
+            </div></div>
+            <div class="note-text" contenteditable="true" spellcheck="true" data-index="${index}" onfocus="app.startInline(event, ${index})" onblur="app.finishInline(event, ${index})" onkeydown="app.inlineKey(event)">${text}</div>
+            <div class="note-hint">Click text to edit inline. Click outside to save.</div>
+            <div class="tags">${tags || '<span class="audio-meta">No tags. Add #tags while editing.</span>'}</div>
+          </article>`;
+        }).join('');
+        this.saveNotes();
+      }
+      filterTag(tag) { this.activeTag = tag; this.renderNotes(); this.toast(`Filtered by ${tag}`); }
+      setView(view) { this.viewMode = view; localStorage.setItem('echonote_view', view); this.renderNotes(); }
+      startInline(e, index) { this.inlineOriginal = this.notes[index]?.content || ''; e.currentTarget.innerText = this.inlineOriginal; }
+      finishInline(e, index) {
+        const note = this.notes[index]; if (!note) return;
+        const content = e.currentTarget.innerText.trim();
+        if (!content) { e.currentTarget.innerText = this.inlineOriginal; return this.toast('Note cannot be empty.', true); }
+        if (content !== note.content) { note.content = content; note.wordCount = this.wordCount(content); note.tags = this.normalizeTags((note.tags||[]).join(' '), content); this.saveNotes(); this.renderNotes(); this.toast('Note updated.'); }
+        else this.renderNotes();
+      }
+      inlineKey(e) { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } if (e.key === 'Escape') { e.preventDefault(); e.currentTarget.innerText = this.inlineOriginal; e.currentTarget.blur(); } }
+
+      cleanText() { this.replaceTranscript(this.el.transcript.value.replace(/\b([\w'’-]+)(\s+\1\b)+/gi,'$1').replace(/\s+([,.;:!?])/g,'$1').replace(/([!?.,])\1+/g,'$1').replace(/([,.;:!?])(?=\S)/g,'$1 ').replace(/[^\S\r\n]{2,}/g,' ').trim()); this.toast('Text cleaned.'); }
+      toList() { const txt=this.el.transcript.value.trim(); if(!txt) return this.toast('No text to convert.', true); this.replaceTranscript(txt.split(/[.!?]+/).map(x=>x.trim()).filter(Boolean).map(x=>`• ${x}`).join('\n')); }
+      setCase(mode) { const t=this.el.transcript.value; if(!t.trim()) return this.toast('No text to convert.', true); const out = mode==='upper'?t.toUpperCase():mode==='lower'?t.toLowerCase():t.toLowerCase().replace(/(^\s*[a-z])|([.!?]\s+[a-z])/g, m=>m.toUpperCase()); this.replaceTranscript(out); }
+      checklist() { const t=this.el.transcript, v=t.value; if(!v.trim()) return this.toast('No text available.', true); let a=t.selectionStart,b=t.selectionEnd,target=v.slice(a,b); if(a===b){a=v.lastIndexOf('\n', Math.max(0,a-1))+1; const n=v.indexOf('\n',b); b=n===-1?v.length:n; target=v.slice(a,b);} const out=target.split('\n').map(x=>x.trim()).filter(Boolean).map(x=>x.startsWith('- [ ]')?x:`- [ ] ${x}`).join('\n'); t.value=v.slice(0,a)+out+v.slice(b); t.focus(); t.setSelectionRange(a,a+out.length); this.updateLiveCount(); }
+      replaceTranscript(text) { this.el.transcript.value = text; this.el.transcript.focus(); this.el.transcript.selectionStart = this.el.transcript.selectionEnd = text.length; this.updateLiveCount(); }
+      clearTranscript() { if (!this.el.transcript.value.trim() && !this.el.tagInput.value.trim()) return; if (confirm('Clear current transcript and tags?')) { this.el.transcript.value=''; this.el.tagInput.value=''; this.updateLiveCount(); } }
+      async copyTranscript() { const t=this.el.transcript.value.trim(); if(!t) return this.toast('No text to copy.', true); await navigator.clipboard.writeText(t); this.toast('Copied transcript.'); }
+      async copyNote(i) { await navigator.clipboard.writeText(this.notes[i].content); this.toast('Copied note.'); }
+      downloadNote(i) { const n=this.notes[i]; this.downloadText(`Note (${new Date(n.date).toLocaleString()})\nTags: ${(n.tags||[]).join(', ') || 'None'}\n${'='.repeat(48)}\n${n.content}`, `echonote-${n.id}.txt`); }
+      deleteNote(i) { if(confirm('Delete this note?')) { this.notes.splice(i,1); this.saveNotes(); this.renderNotes(); this.toast('Note deleted.'); } }
+      exportAllNotes() { if(!this.notes.length) return this.toast('No notes to export.', true); const txt=this.notes.map((n,i)=>`Note ${i+1} (${new Date(n.date).toLocaleString()})\nTags: ${(n.tags||[]).join(', ') || 'None'}\n${'='.repeat(48)}\n${n.content}\n`).join('\n'); this.downloadText(txt, `echonote-notes-${new Date().toISOString().slice(0,10)}.txt`); }
+      downloadText(text, name) { const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'})); this.downloadDataUrl(url,name,true); }
+      downloadDataUrl(url, name, revoke=false) { const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); if(revoke) URL.revokeObjectURL(url); }
+
+      highlight(text, q) { const safe=this.escape(text); if(!q) return safe; const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi'); return safe.replace(re,'<mark>$1</mark>'); }
+      escape(s='') { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+      safeJson(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch { return fallback; } }
+      bytes(b) { if(!b) return '0 KB'; const u=['B','KB','MB']; let i=0; while(b>=1024&&i<u.length-1){b/=1024;i++;} return `${b.toFixed(b>=10||i===0?0:1)} ${u[i]}`; }
+      toggleShortcuts(force=null) { const show = force === null ? !this.el.overlay.classList.contains('show') : !!force; this.el.overlay.classList.toggle('show', show); }
+      toast(msg, error=false) { this.el.toast.textContent = msg; this.el.toast.className = `toast ${error?'error':''} show`; clearTimeout(this.toastTimer); this.toastTimer=setTimeout(()=>this.el.toast.classList.remove('show'),2600); }
+    }
+
+    const app = new EchoNote();
+  </script>
+</body>
+</html>
