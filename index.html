@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full antialiased" data-theme="dark" data-accent="amber">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=0">
+  <meta name="theme-color" content="#09090b">
+  <title>VocalScribe</title>
+  
+  <!-- Tailwind CSS v4 -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  
+  <!-- Premium Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --brand: #f59e0b; --brand-hover: #d97706; --brand-soft: rgba(245,158,11,.15); --brand-border: rgba(245,158,11,.3); --brand-glow: rgba(245,158,11,.4); --brand-text: #f59e0b;
+      --danger: #ef4444; --danger-glow: rgba(239,68,68,.5);
+    }
+    [data-accent="amber"] { --brand: #f59e0b; --brand-hover: #d97706; --brand-soft: rgba(245,158,11,.15); --brand-border: rgba(245,158,11,.3); --brand-glow: rgba(245,158,11,.4); --brand-text: #f59e0b; }
+    [data-accent="blue"] { --brand: #3b82f6; --brand-hover: #2563eb; --brand-soft: rgba(59,130,246,.15); --brand-border: rgba(59,130,246,.3); --brand-glow: rgba(59,130,246,.4); --brand-text: #60a5fa; }
+    [data-accent="emerald"] { --brand: #10b981; --brand-hover: #059669; --brand-soft: rgba(16,185,129,.15); --brand-border: rgba(16,185,129,.3); --brand-glow: rgba(16,185,129,.4); --brand-text: #34d399; }
+    [data-accent="violet"] { --brand: #8b5cf6; --brand-hover: #7c3aed; --brand-soft: rgba(139,92,246,.15); --brand-border: rgba(139,92,246,.3); --brand-glow: rgba(139,92,246,.4); --brand-text: #a78bfa; }
+    [data-accent="rose"] { --brand: #f43f5e; --brand-hover: #e11d48; --brand-soft: rgba(244,63,94,.15); --brand-border: rgba(244,63,94,.3); --brand-glow: rgba(244,63,94,.4); --brand-text: #fb7185; }
+    
+    [data-theme="dark"] {
+      --bg-page: #09090b; --bg-card: #18181b; --bg-dock: rgba(24,24,27,.85); --bg-modal: #18181b; --bg-subtle: rgba(255,255,255,.05);
+      --border-subtle: rgba(255,255,255,.08); --border-card: rgba(255,255,255,.06);
+      --text-primary: #fafafa; --text-secondary: #d4d4d8; --text-muted: #a1a1aa; --text-dim: #71717a; --text-placeholder: #52525b;
+      --scrollbar-thumb: rgba(255,255,255,.1); --shadow-card: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+    [data-theme="light"] {
+      --bg-page: #f8fafc; --bg-card: #ffffff; --bg-dock: rgba(255,255,255,.9); --bg-modal: #ffffff; --bg-subtle: rgba(0,0,0,.04);
+      --border-subtle: rgba(0,0,0,.08); --border-card: rgba(0,0,0,.06);
+      --text-primary: #09090b; --text-secondary: #3f3f46; --text-muted: #71717a; --text-dim: #a1a1aa; --text-placeholder: #d4d4d8;
+      --scrollbar-thumb: rgba(0,0,0,.15); --shadow-card: 0 10px 30px -10px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      overscroll-behavior: none; -webkit-tap-highlight-color: transparent;
+      background: var(--bg-page); color: var(--text-secondary);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .mono { font-family: "JetBrains Mono", monospace; }
+
+    /* Custom Scrollbar */
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { scrollbar-width: none; }
+
+    /* Animations */
+    @keyframes mic-pulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.3); opacity: 0; } }
+    @keyframes rec-glow { 0%, 100% { box-shadow: 0 0 20px 4px var(--danger-glow); } 50% { box-shadow: 0 0 45px 12px var(--danger-glow); } }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-16px) scale(.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes scale-in { from { opacity: 0; transform: scale(.96) translateY(12px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes fade-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    
+    .mic-ring { animation: mic-pulse 2s cubic-bezier(.2,0,.2,1) infinite; }
+    .rec-glow { animation: rec-glow 2s ease-in-out infinite; }
+    .toast-in { animation: toast-in .3s cubic-bezier(.16,1,.3,1) both; }
+    .scale-in { animation: scale-in .3s cubic-bezier(.16,1,.3,1) both; }
+    .save-pulse { animation: fade-pulse 1.5s ease-in-out infinite; }
+
+    /* Themed Components */
+    .themed-card { background: var(--bg-card); border-color: var(--border-card); box-shadow: var(--shadow-card); transition: all 0.3s; }
+    .themed-card:hover { border-color: var(--brand-border); }
+    .themed-dock { background: var(--bg-dock); border-color: var(--border-subtle); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+    .themed-modal { background: var(--bg-modal); border-color: var(--border-subtle); box-shadow: var(--shadow-card); }
+    .themed-input { background: var(--bg-subtle); border: 1px solid var(--border-subtle); color: var(--text-primary); transition: all 0.2s; }
+    .themed-input:focus { border-color: var(--brand-border); outline: none; background: transparent; }
+    .themed-input::placeholder { color: var(--text-placeholder); }
+
+    .text-themed-primary { color: var(--text-primary); }
+    .text-themed-secondary { color: var(--text-secondary); }
+    .text-themed-muted { color: var(--text-muted); }
+    .text-themed-dim { color: var(--text-dim); }
+    .text-themed-brand { color: var(--brand-text); }
+    .border-themed-subtle { border-color: var(--border-subtle); }
+    .bg-themed-subtle { background: var(--bg-subtle); }
+    
+    /* Interactive Elements */
+    .btn-ghost { background: transparent; border: 1px solid transparent; color: var(--text-muted); transition: all 0.2s; }
+    .btn-ghost:hover { background: var(--bg-subtle); color: var(--text-primary); }
+    
+    #transcript { caret-color: var(--brand); line-height: 1.8; color: var(--text-primary); font-size: 18px; }
+    #transcript::placeholder { color: var(--text-placeholder); font-weight: 500; }
+    
+    .pb-safe { padding-bottom: max(1.5rem, env(safe-area-inset-bottom)); }
+    .pt-safe-top { padding-top: max(1rem, env(safe-area-inset-top)); }
+
+    /* Custom iOS-style Toggle */
+    .toggle-switch { appearance: none; width: 44px; height: 24px; background: var(--bg-subtle); border-radius: 999px; position: relative; cursor: pointer; outline: none; border: 1px solid var(--border-subtle); transition: background 0.3s, border-color 0.3s; }
+    .toggle-switch::after { content: ''; position: absolute; top: 1px; left: 1px; width: 20px; height: 20px; background: var(--text-muted); border-radius: 50%; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), background 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .toggle-switch:checked { background: var(--brand); border-color: var(--brand); }
+    [data-theme="light"] .toggle-switch:checked::after { background: #fff; }
+    [data-theme="dark"] .toggle-switch:checked::after { background: #fff; }
+    .toggle-switch:checked::after { transform: translateX(20px); }
+
+    /* View Management */
+    .view { display: none; opacity: 0; transition: opacity 0.3s ease; }
+    .view.active { display: flex; opacity: 1; }
+
+    /* Folders & Chips */
+    .chip { display: inline-flex; items-center; gap: 6px; padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; background: var(--bg-subtle); border: 1px solid var(--border-subtle); color: var(--text-muted); }
+    .chip:hover { color: var(--text-primary); border-color: var(--text-dim); }
+    .chip.active { background: var(--brand-soft); color: var(--brand-text); border-color: var(--brand-border); }
+    .chip .chip-count { font-size: 10px; padding: 2px 6px; border-radius: 999px; background: var(--bg-card); opacity: 0.8; }
+
+    /* Audio Player */
+    audio::-webkit-media-controls-panel { background-color: var(--bg-subtle); border-radius: 12px; }
+    audio::-webkit-media-controls-play-button, audio::-webkit-media-controls-mute-button { filter: invert(var(--invert-audio, 1)); }
+    [data-theme="light"] { --invert-audio: 0; }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; }
+      #app, #toastRegion, .modal-layer, .dock-container { display: none !important; }
+      #printDocument { display: block !important; padding: 0.5in; }
+      #printDocument h1 { font-size: 24pt; margin-bottom: 8pt; border-bottom: 1px solid #ddd; padding-bottom: 8px; font-family: sans-serif; }
+      #printDocument .print-date { color: #666; font-size: 11pt; margin-bottom: 24pt; }
+      #printDocument .print-body { white-space: pre-wrap; font-size: 12pt; line-height: 1.6; }
+    }
+  </style>
+</head>
+<body class="h-full custom-scroll overflow-y-auto overflow-x-hidden flex flex-col">
+  <!-- Toast Region -->
+  <div id="toastRegion" class="pointer-events-none fixed left-4 right-4 top-4 z-[100] flex flex-col items-center gap-3 sm:left-auto sm:right-6 sm:w-80" aria-live="polite"></div>
+
+  <!-- Header -->
+  <header class="pt-safe-top flex h-[80px] shrink-0 items-center justify-between px-5 sm:px-8 max-w-5xl mx-auto w-full z-10">
+    <div class="flex items-center gap-3">
+      <div class="flex h-10 w-10 items-center justify-center rounded-[14px] shadow-lg" style="background:linear-gradient(135deg,var(--brand),var(--brand-hover))">
+        <!-- App Logo (Waves) -->
+        <svg class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20"/><path d="M17 7v10"/><path d="M7 10v4"/><path d="M22 10v4"/><path d="M2 10v4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight text-themed-primary leading-none">VocalScribe</h1>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div id="headerStatus" class="flex items-center gap-2 rounded-full border border-themed-subtle bg-themed-subtle px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-themed-muted shadow-sm transition-colors">
+        <span id="statusDot" class="h-2 w-2 rounded-full bg-emerald-500 transition-colors duration-300 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+        <span id="statusLabel" class="hidden sm:inline">Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="app" class="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-8 pb-36 relative">
+
+    <!-- VIEW 1: EDITOR -->
+    <main id="view-editor" class="view active flex-col h-full min-h-[70vh]">
+      <section class="themed-card relative flex flex-col flex-1 rounded-[32px] border">
+        
+        <!-- Editor Header -->
+        <div class="flex flex-col gap-3 border-b border-themed-subtle p-5 sm:p-8 pb-5">
+          <div class="flex justify-between items-start gap-4">
+            <input id="noteTitle" class="w-full bg-transparent text-2xl sm:text-3xl font-extrabold text-themed-primary placeholder:text-themed-dim outline-none truncate" maxlength="80" value="Untitled transcript" dir="auto">
+            
+            <div class="flex items-center gap-2 shrink-0 mt-1">
+              <!-- Folder Select -->
+              <div class="relative">
+                <button id="folderSelectBtn" class="flex h-10 items-center gap-2 rounded-full bg-themed-subtle border border-themed-subtle px-3.5 text-xs font-bold text-themed-muted transition hover:text-themed-primary hover:border-themed-primary" title="Assign to folder">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                  <span id="currentFolderLabel" class="max-w-[80px] truncate">All</span>
+                </button>
+                <div id="folderDropdown" class="hidden absolute right-0 top-full mt-2 z-30 w-56 rounded-2xl border border-themed-subtle themed-modal shadow-2xl py-2 max-h-60 overflow-y-auto custom-scroll"></div>
+              </div>
+              <!-- Copy -->
+              <button id="copyButton" class="flex h-10 w-10 items-center justify-center rounded-full bg-themed-subtle border border-themed-subtle text-themed-muted transition hover:text-themed-primary hover:border-themed-primary" title="Copy Text">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Tags & Save State -->
+          <div class="flex justify-between items-center mt-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <div id="activeTagsContainer" class="flex flex-wrap gap-2"></div>
+              <input type="text" id="tagInput" class="bg-transparent border border-dashed border-themed-subtle rounded-full px-3 py-1.5 text-xs font-semibold text-themed-secondary outline-none w-24 focus:w-32 transition-all placeholder:text-themed-dim focus:border-themed-primary" placeholder="+ Add tag" maxlength="20">
+            </div>
+            <div class="flex flex-col items-end">
+              <span id="saveState" class="mono text-[10px] font-bold text-themed-dim tracking-wider uppercase">DRAFT</span>
+              <span id="saveTimestamp" class="mono text-[9px] text-themed-dim tracking-wide hidden"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Find & Replace Bar -->
+        <div id="findBar" class="hidden shrink-0 grid-cols-[1fr_auto_auto] items-center gap-3 border-b px-5 sm:px-8 py-3 sm:grid-cols-[1fr_1fr_auto_auto]" style="border-color:var(--brand-border); background:var(--brand-soft)">
+          <input id="findInput" class="col-span-3 min-w-0 rounded-xl border border-themed-subtle bg-themed-card px-4 py-2.5 text-sm text-themed-primary outline-none focus:border-brand sm:col-span-1" placeholder="Find">
+          <input id="replaceInput" class="min-w-0 rounded-xl border border-themed-subtle bg-themed-card px-4 py-2.5 text-sm text-themed-primary outline-none focus:border-brand" placeholder="Replace">
+          <button id="replaceButton" class="h-10 shrink-0 rounded-xl px-5 text-xs font-bold text-white transition hover:opacity-80 shadow-md" style="background:var(--brand)">Replace all</button>
+          <button id="closeFindButton" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/10 text-themed-primary transition hover:bg-black/20 dark:bg-white/10 dark:hover:bg-white/20">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Waveform Container -->
+        <div id="waveformContainer" class="hidden px-5 sm:px-8 pt-5">
+          <canvas id="waveformCanvas" height="60" class="w-full rounded-xl opacity-80"></canvas>
+        </div>
+
+        <!-- Main Text Area -->
+        <div class="relative flex-1 min-h-[300px]">
+          <textarea id="transcript" class="custom-scroll absolute inset-0 h-full w-full resize-none bg-transparent px-5 py-6 sm:px-8 sm:py-6 outline-none" spellcheck="true" placeholder="Start speaking or typing here..." dir="auto"></textarea>
+        </div>
+
+        <!-- Perf Warning -->
+        <div id="perfWarning" class="hidden px-5 sm:px-8 pb-3">
+          <div class="flex items-center gap-3 rounded-xl bg-amber-500/10 border border-amber-500/20 px-4 py-3 text-xs font-semibold text-amber-600 dark:text-amber-400">
+            <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <span id="perfWarningText"></span>
+          </div>
+        </div>
+
+        <!-- Audio Player -->
+        <div id="audioPlayerContainer" class="hidden px-5 sm:px-8 pb-4">
+          <div class="flex items-center gap-3 p-2 pr-4 rounded-2xl bg-themed-subtle border border-themed-subtle">
+            <button id="downloadAudioBtn" class="flex h-10 w-10 items-center justify-center rounded-xl bg-themed-card text-themed-primary shadow-sm transition hover:text-brand shrink-0" title="Download Audio">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            </button>
+            <audio id="audioPlayer" controls class="flex-1 h-10 outline-none"></audio>
+            <button id="clearAudioBtn" class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-500 transition hover:bg-red-500/20 shrink-0" title="Discard Audio">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor Toolbar / Footer -->
+        <div class="bg-themed-subtle border-t border-themed-subtle rounded-b-[32px] p-4 sm:px-8 flex flex-col gap-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex gap-4 text-[10px] sm:text-xs text-themed-dim font-bold uppercase tracking-widest">
+              <span><span id="wordCount" class="text-themed-primary">0</span> Words</span>
+              <span><span id="charCount" class="text-themed-primary">0</span> Chars</span>
+            </div>
+            <div class="flex h-9 items-center gap-1 rounded-full bg-themed-card border border-themed-subtle px-3 shadow-sm">
+              <select id="languageSelect" class="bg-transparent text-[11px] font-bold text-themed-primary outline-none cursor-pointer uppercase tracking-wider">
+                <option value="en-US">EN-US</option><option value="en-GB">EN-UK</option><option value="en-IN">EN-IN</option><option value="en-AU">EN-AU</option><option value="es-ES">ES</option><option value="fr-FR">FR</option><option value="de-DE">DE</option><option value="hi-IN">HI</option><option value="ja-JP">JA</option><option value="ko-KR">KO</option><option value="zh-CN">ZH</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pb-1">
+            <div class="flex gap-2">
+              <button id="undoButton" class="btn-ghost flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" title="Undo">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+              </button>
+              <div class="flex items-center rounded-xl border border-themed-subtle bg-themed-card overflow-hidden shrink-0">
+                <button id="fontDownButton" class="flex h-11 w-11 items-center justify-center text-themed-muted hover:text-themed-primary hover:bg-themed-subtle transition" title="Smaller Font"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+                <div class="w-px h-6 bg-themed-subtle"></div>
+                <button id="fontUpButton" class="flex h-11 w-11 items-center justify-center text-themed-muted hover:text-themed-primary hover:bg-themed-subtle transition" title="Larger Font"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+              </div>
+              <button id="findButton" class="btn-ghost flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-bold uppercase tracking-wider">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg> Find
+              </button>
+            </div>
+            
+            <div class="flex gap-2 shrink-0">
+              <button id="formatButton" class="btn-ghost flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-bold uppercase tracking-wider" title="Format Layout">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12H9"/><path d="M21 6H9"/><path d="M21 18H9"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg> Format
+              </button>
+              <!-- Magic Enhance (Replaces Clean) -->
+              <button id="magicEnhanceBtn" class="flex h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-bold uppercase tracking-wider transition hover:opacity-90 shadow-[0_0_15px_var(--brand-soft)]" style="background:var(--brand-soft); color:var(--brand); border: 1px solid var(--brand-border);">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg> Enhance
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interim Text Bubble -->
+        <div id="interimBubble" class="pointer-events-none absolute bottom-36 left-1/2 -translate-x-1/2 w-[90%] max-w-lg hidden z-10 scale-in">
+          <div class="flex items-center gap-3 rounded-2xl px-5 py-4 text-sm shadow-2xl backdrop-blur-xl border border-themed-subtle bg-themed-modal/90">
+            <span class="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full shadow-[0_0_8px_var(--brand)]" style="background:var(--brand)"></span>
+            <span id="interimText" class="truncate font-medium italic text-themed-secondary"></span>
+          </div>
+        </div>
+
+      </section>
+    </main>
+
+    <!-- VIEW 2: DASHBOARD (Notes) -->
+    <main id="view-dashboard" class="view flex-col gap-6 w-full pt-2">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-end gap-5">
+        <div>
+          <h2 class="text-3xl font-extrabold text-themed-primary tracking-tight">Your Notes</h2>
+          <p class="text-sm font-medium text-themed-dim mt-1">Manage all your saved transcripts.</p>
+        </div>
+        
+        <div class="flex gap-3 w-full sm:w-auto">
+          <div class="relative flex-1 sm:w-64">
+            <svg class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-themed-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="notesSearch" class="themed-input w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm font-medium outline-none shadow-sm" placeholder="Search notes...">
+          </div>
+          <div class="relative shrink-0">
+            <select id="sortSelect" class="themed-input appearance-none rounded-2xl pl-4 pr-10 py-2.5 text-xs font-bold uppercase tracking-wider outline-none cursor-pointer shadow-sm">
+              <option value="updated">Recent</option>
+              <option value="created">Created</option>
+              <option value="alpha">A-Z</option>
+            </select>
+            <svg class="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-themed-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Folders row -->
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-3">
+          <div id="folderBar" class="flex gap-2 overflow-x-auto no-scrollbar py-1 flex-1 mask-fade-right"></div>
+          <button id="addFolderBtn" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-themed-subtle bg-themed-card text-themed-muted transition hover:text-themed-primary shadow-sm" title="New folder">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+          </button>
+        </div>
+        <!-- Subfolders -->
+        <div id="subfolderBar" class="hidden flex flex-wrap gap-2 pl-2 border-l-2 ml-1" style="border-color:var(--brand-border)"></div>
+      </div>
+
+      <div id="activeFilterTags" class="hidden flex-wrap items-center gap-2"></div>
+      
+      <!-- Notes Grid -->
+      <div id="savedNotesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </main>
+
+  </div>
+
+  <!-- DOCK (Floating Bottom Navbar) -->
+  <div class="dock-container fixed bottom-6 left-0 right-0 flex justify-center pointer-events-none z-40 pb-safe px-4">
+    <nav class="themed-dock pointer-events-auto flex items-center justify-between gap-1 sm:gap-2 px-3 py-2.5 rounded-full shadow-[0_20px_40px_rgba(0,0,0,.3)] dark:shadow-[0_20px_40px_rgba(0,0,0,.8)] w-full max-w-sm border">
+      
+      <button id="navDashboard" class="flex flex-col items-center justify-center h-12 w-12 rounded-full text-themed-muted transition hover:bg-themed-subtle hover:text-themed-primary group" title="My Notes">
+        <svg class="h-5 w-5 mb-0.5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h10"/></svg>
+      </button>
+
+      <button id="navNewNote" class="flex flex-col items-center justify-center h-12 w-12 rounded-full text-themed-muted transition hover:bg-themed-subtle hover:text-themed-primary group" title="New Note">
+        <svg class="h-5 w-5 mb-0.5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+      </button>
+
+      <!-- Giant Center Record Button -->
+      <div class="relative mx-2 flex flex-col items-center justify-center -translate-y-4">
+        <div id="micPulse" class="mic-ring absolute inset-0 hidden h-full w-full rounded-full pointer-events-none" style="background:var(--brand-glow)"></div>
+        <button id="recordButton" class="relative z-10 flex h-[64px] w-[64px] items-center justify-center rounded-full text-white shadow-[0_8px_24px_var(--brand-glow)] transition-all duration-300 hover:scale-[1.05] active:scale-[0.95]" style="background:linear-gradient(135deg,var(--brand),var(--brand-hover))" aria-pressed="false">
+          <svg id="micIcon" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <svg id="stopIcon" class="hidden h-7 w-7 text-white" viewBox="0 0 24 24" fill="currentColor"><rect width="12" height="12" x="6" y="6" rx="2"/></svg>
+        </button>
+      </div>
+
+      <button id="navExport" class="flex flex-col items-center justify-center h-12 w-12 rounded-full text-themed-muted transition hover:bg-themed-subtle hover:text-themed-primary group" title="Export">
+        <svg class="h-5 w-5 mb-0.5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>
+      </button>
+
+      <button id="navSettings" class="flex flex-col items-center justify-center h-12 w-12 rounded-full text-themed-muted transition hover:bg-themed-subtle hover:text-themed-primary group" title="Settings">
+        <svg class="h-5 w-5 mb-0.5 group-hover:rotate-45 transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.77 1.02 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
+
+    </nav>
+  </div>
+
+  <div id="backdrop" class="modal-layer fixed inset-0 hidden bg-black/60 backdrop-blur-sm transition-opacity z-50"></div>
+
+  <!-- MODERN SETTINGS MODAL -->
+  <section id="settingsModal" class="modal-layer fixed bottom-0 inset-x-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[75] hidden max-h-[90dvh] w-full md:w-[480px] flex-col rounded-t-[32px] md:rounded-[32px] themed-modal border scale-in pb-safe md:pb-0">
+    <div class="flex items-center justify-between border-b border-themed-subtle px-7 py-6">
+      <div>
+        <h2 class="text-xl font-extrabold text-themed-primary">Settings</h2>
+        <p class="text-xs font-medium text-themed-muted mt-0.5">Customize your experience</p>
+      </div>
+      <button data-close-overlay class="flex h-10 w-10 items-center justify-center rounded-full bg-themed-subtle text-themed-muted hover:bg-black/10 dark:hover:bg-white/10 transition">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="custom-scroll overflow-y-auto px-7 py-6 space-y-8">
+      
+      <!-- Theme & Accent -->
+      <div>
+        <h3 class="text-[11px] font-bold text-themed-muted uppercase tracking-widest mb-4">Appearance</h3>
+        <div class="flex flex-col gap-5">
+          <div class="grid grid-cols-2 gap-3">
+            <button id="themeLightBtn" class="flex items-center justify-center gap-2 rounded-2xl border border-themed-subtle bg-themed-card p-4 transition hover:border-brand">
+              <svg class="h-5 w-5 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <span class="text-sm font-semibold text-themed-primary">Light</span>
+            </button>
+            <button id="themeDarkBtn" class="flex items-center justify-center gap-2 rounded-2xl border border-themed-subtle bg-themed-card p-4 transition hover:border-brand">
+              <svg class="h-5 w-5 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+              <span class="text-sm font-semibold text-themed-primary">Dark</span>
+            </button>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-themed-secondary mb-3">Accent Color</label>
+            <div class="flex items-center gap-3">
+              <button class="accent-swatch h-10 w-10 rounded-full border-[3px] border-transparent transition-transform hover:scale-110 shadow-sm" data-accent="amber" style="background:#f59e0b"></button>
+              <button class="accent-swatch h-10 w-10 rounded-full border-[3px] border-transparent transition-transform hover:scale-110 shadow-sm" data-accent="blue" style="background:#3b82f6"></button>
+              <button class="accent-swatch h-10 w-10 rounded-full border-[3px] border-transparent transition-transform hover:scale-110 shadow-sm" data-accent="emerald" style="background:#10b981"></button>
+              <button class="accent-swatch h-10 w-10 rounded-full border-[3px] border-transparent transition-transform hover:scale-110 shadow-sm" data-accent="violet" style="background:#8b5cf6"></button>
+              <button class="accent-swatch h-10 w-10 rounded-full border-[3px] border-transparent transition-transform hover:scale-110 shadow-sm" data-accent="rose" style="background:#f43f5e"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App Preferences -->
+      <div>
+        <h3 class="text-[11px] font-bold text-themed-muted uppercase tracking-widest mb-4">Speech & Audio</h3>
+        <div class="flex flex-col gap-3">
+          <label class="flex items-center justify-between p-4 rounded-2xl border border-themed-subtle bg-themed-card cursor-pointer group hover:border-brand-border transition-colors">
+            <div><strong class="block text-sm font-semibold text-themed-primary">Continuous Listening</strong><span class="text-[11px] font-medium text-themed-muted mt-0.5 block">Auto-restarts after pauses</span></div>
+            <input id="continuousSetting" type="checkbox" class="toggle-switch">
+          </label>
+          <label class="flex items-center justify-between p-4 rounded-2xl border border-themed-subtle bg-themed-card cursor-pointer group hover:border-brand-border transition-colors">
+            <div><strong class="block text-sm font-semibold text-themed-primary">Voice Commands</strong><span class="text-[11px] font-medium text-themed-muted mt-0.5 block">"New line", "Stop listening"</span></div>
+            <input id="commandsSetting" type="checkbox" class="toggle-switch">
+          </label>
+          <label class="flex items-center justify-between p-4 rounded-2xl border border-themed-subtle bg-themed-card cursor-pointer group hover:border-brand-border transition-colors">
+            <div><strong class="block text-sm font-semibold text-themed-primary">Audio Recording</strong><span class="text-[11px] font-medium text-themed-muted mt-0.5 block">Save original voice to WebM</span></div>
+            <input id="audioRecordSetting" type="checkbox" class="toggle-switch">
+          </label>
+          <label class="flex items-center justify-between p-4 rounded-2xl border border-themed-subtle bg-themed-card cursor-pointer group hover:border-brand-border transition-colors">
+            <div><strong class="block text-sm font-semibold text-themed-primary">Sound Effects</strong><span class="text-[11px] font-medium text-themed-muted mt-0.5 block">Start/Stop feedback tones</span></div>
+            <input id="soundSetting" type="checkbox" class="toggle-switch">
+          </label>
+          <label class="flex items-center justify-between p-4 rounded-2xl border border-themed-subtle bg-themed-card cursor-pointer group hover:border-brand-border transition-colors">
+            <div><strong class="block text-sm font-semibold text-themed-primary">Haptic Feedback</strong><span class="text-[11px] font-medium text-themed-muted mt-0.5 block">Vibrate on actions (if supported)</span></div>
+            <input id="hapticSetting" type="checkbox" class="toggle-switch">
+          </label>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ACTIONS/EXPORT MODAL -->
+  <section id="actionsModal" class="modal-layer fixed bottom-0 inset-x-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[75] hidden max-h-[90dvh] w-full md:w-[460px] flex-col rounded-t-[32px] md:rounded-[32px] themed-modal border scale-in pb-safe md:pb-0">
+    <div class="flex items-center justify-between border-b border-themed-subtle px-7 py-6">
+      <h2 class="text-xl font-extrabold text-themed-primary">Export Options</h2>
+      <button data-close-overlay class="flex h-10 w-10 items-center justify-center rounded-full bg-themed-subtle text-themed-muted hover:bg-black/10 dark:hover:bg-white/10 transition">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="grid grid-cols-3 gap-3 p-6 overflow-y-auto">
+      <button data-action="share" class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-themed-subtle bg-themed-card p-5 transition hover:border-brand-border hover:shadow-md">
+        <div class="rounded-full bg-pink-500/10 p-3.5 text-pink-500"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+        <span class="text-xs font-bold text-themed-secondary">Share</span>
+      </button>
+      <button data-action="txt" class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-themed-subtle bg-themed-card p-5 transition hover:border-brand-border hover:shadow-md">
+        <div class="rounded-full bg-stone-500/10 p-3.5 text-stone-500"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></div>
+        <span class="text-xs font-bold text-themed-secondary">Text</span>
+      </button>
+      <button data-action="md" class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-themed-subtle bg-themed-card p-5 transition hover:border-brand-border hover:shadow-md">
+        <div class="rounded-full bg-purple-500/10 p-3.5 text-purple-500"><span class="mono text-lg font-black leading-none">M↓</span></div>
+        <span class="text-xs font-bold text-themed-secondary">Markdown</span>
+      </button>
+      <button data-action="doc" class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-themed-subtle bg-themed-card p-5 transition hover:border-brand-border hover:shadow-md">
+        <div class="rounded-full bg-blue-500/10 p-3.5 text-blue-500"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M9.5 17.5 8 12l1.5 5.5Zm0 0L11 12l-1.5 5.5Zm3.5-5.5L14.5 17.5 13 12Zm0 0L16 17.5 14.5 12Z"/></svg></div>
+        <span class="text-xs font-bold text-themed-secondary">Word</span>
+      </button>
+      <button data-action="pdf" class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-themed-subtle bg-themed-card p-5 transition hover:border-brand-border hover:shadow-md">
+        <div class="rounded-full bg-red-500/10 p-3.5 text-red-500"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13v6"/><path d="M9 16h2.5a1.5 1.5 0 0 0 0-3H9z"/><path d="M14 13h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2v2"/><path d="M18 13v6"/></svg></div>
+        <span class="text-xs font-bold text-themed-secondary">PDF</span>
+      </button>
+      <button data-action="print" class="group flex flex-col items-center justify-center gap-3 rounded-2xl border border-themed-subtle bg-themed-card p-5 transition hover:border-brand-border hover:shadow-md">
+        <div class="rounded-full bg-emerald-500/10 p-3.5 text-emerald-500"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg></div>
+        <span class="text-xs font-bold text-themed-secondary">Print</span>
+      </button>
+    </div>
+    <div class="p-6 pt-0">
+       <button data-action="clear" class="w-full flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 py-4 text-sm font-bold text-red-500 transition hover:bg-red-500/20">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        Clear Everything
+      </button>
+    </div>
+  </section>
+
+  <!-- FOLDER MODAL -->
+  <section id="folderModal" class="modal-layer fixed bottom-0 inset-x-0 md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 z-[75] hidden w-full md:w-[400px] flex-col rounded-t-[32px] md:rounded-[32px] themed-modal border scale-in pb-safe md:pb-0">
+    <div class="flex items-center justify-between border-b border-themed-subtle px-7 py-6">
+      <h2 id="folderModalTitle" class="text-xl font-extrabold text-themed-primary">New Folder</h2>
+      <button data-close-overlay class="flex h-10 w-10 items-center justify-center rounded-full bg-themed-subtle text-themed-muted hover:bg-black/10 dark:hover:bg-white/10 transition">
+        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+    <div class="px-7 py-6 space-y-5">
+      <div>
+        <label class="block text-xs font-bold text-themed-muted uppercase tracking-widest mb-2">Folder Name</label>
+        <input id="folderNameInput" class="themed-input w-full rounded-xl px-4 py-3.5 text-sm font-medium outline-none" placeholder="e.g. Meetings, Ideas..." maxlength="40">
+      </div>
+      <div id="parentFolderSelect" class="hidden">
+        <label class="block text-xs font-bold text-themed-muted uppercase tracking-widest mb-2">Parent Folder</label>
+        <select id="parentFolderSelectEl" class="themed-input w-full rounded-xl px-4 py-3.5 text-sm font-medium outline-none cursor-pointer"></select>
+      </div>
+    </div>
+    <div class="border-t border-themed-subtle p-6 flex gap-3 bg-themed-subtle/50 md:rounded-b-[32px]">
+      <button id="folderModalDelete" class="hidden rounded-xl px-5 py-3 text-sm font-bold text-red-500 bg-red-500/10 transition hover:bg-red-500/20">Delete</button>
+      <div class="flex-1"></div>
+      <button data-close-overlay class="rounded-xl px-5 py-3 text-sm font-bold text-themed-muted bg-themed-card border border-themed-subtle transition hover:text-themed-primary">Cancel</button>
+      <button id="folderModalSave" class="rounded-xl px-6 py-3 text-sm font-bold text-white transition hover:opacity-80 shadow-md" style="background:var(--brand)">Save Folder</button>
+    </div>
+  </section>
+
+  <!-- Print Template -->
+  <div id="printDocument"><h1 id="printTitle"></h1><div id="printDate" class="print-date"></div><div id="printBody" class="print-body"></div></div>
+
+  <script>
+  document.addEventListener("DOMContentLoaded",()=>{
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    const $=id=>document.getElementById(id);
+    const ui={
+      transcript:$("transcript"),title:$("noteTitle"),record:$("recordButton"),micIcon:$("micIcon"),stopIcon:$("stopIcon"),
+      micPulse:$("micPulse"),statusDot:$("statusDot"),statusLabel:$("statusLabel"),interimBubble:$("interimBubble"),
+      interimText:$("interimText"),saveState:$("saveState"),saveTimestamp:$("saveTimestamp"),backdrop:$("backdrop"),
+      settingsModal:$("settingsModal"),actionsModal:$("actionsModal"),folderModal:$("folderModal"),
+      savedNotesGrid:$("savedNotesGrid"),activeTagsContainer:$("activeTagsContainer"),tagInput:$("tagInput"),
+      sortSelect:$("sortSelect"),waveformCanvas:$("waveformCanvas"),waveformContainer:$("waveformContainer"),
+      audioPlayer:$("audioPlayer"),audioPlayerContainer:$("audioPlayerContainer"),perfWarning:$("perfWarning"),
+      perfWarningText:$("perfWarningText"),copyButton:$("copyButton"),folderBar:$("folderBar"),
+      subfolderBar:$("subfolderBar"),folderDropdown:$("folderDropdown"),currentFolderLabel:$("currentFolderLabel"),
+      navDashboard:$("navDashboard"),navNewNote:$("navNewNote"),navExport:$("navExport"),navSettings:$("navSettings")
+    };
+
+    const defaultSettings={continuous:true,commands:true,sound:true,haptic:true,audioRecord:true};
+    let settings={...defaultSettings,...loadJSON("vocalScribeSettings",{})};
+    const defaultTheme={mode:"dark",accent:"amber"};
+    let themeSettings={...defaultTheme,...loadJSON("vocalScribeTheme",{})};
+    let notes=loadJSON("vocalScribeNotes",[]);if(!Array.isArray(notes))notes=[];
+    notes=notes.map(n=>{if(!("tags" in n))n.tags=[];if(!("folderId" in n))n.folderId="all";return n});
+    let folders=loadJSON("vocalScribeFolders",[{id:"all",name:"All Notes",parentId:null}]);
+    if(!Array.isArray(folders)||!folders.find(f=>f.id==="all"))folders=[{id:"all",name:"All Notes",parentId:null},...folders.filter(f=>f.id!=="all")];
+    
+    let activeNoteId=null,activeTags=[],saveTimer=null,fontSize=18,notesFilterTag="",autoTitleApplied=false;
+    let activeFolderId="all",editingFolderId=null;
+    let activeView='editor'; // 'editor' | 'dashboard'
+
+    let recognition=null,wantsToListen=false,recognitionRunning=false,startPending=false,restartTimer=null,cycleId=0,handledFinalResults=new Set(),recentFinals=[],fatalRecognitionError=false,listeningSessionActive=false,restartAttempts=0;
+    const MAX_RESTART=8;
+    let audioStream=null,audioContext=null,analyser=null,waveAnimId=null,mediaRecorder=null,audioChunks=[],audioBlobUrl=null;
+
+    applyTheme();applySettingsToUI();restoreDraft();renderActiveTags();renderFolders();renderNotes();updateStats();updateThemeUI();initWaveformCanvas();
+    if(!SR){ui.record.disabled=true;setStatus("Unsupported","error");showToast("Speech API not supported.","error")}else createRecognition();
+
+    function switchView(viewId) {
+      activeView = viewId;
+      document.querySelectorAll('.view').forEach(v => { v.classList.remove('active'); setTimeout(()=>v.classList.add('hidden'), 10); });
+      const target = $(`view-${viewId}`);
+      target.classList.remove('hidden');
+      void target.offsetWidth; 
+      target.classList.add('active');
+      window.scrollTo(0,0);
+      
+      // Update Dock UI
+      ui.navDashboard.style.color = viewId === 'dashboard' ? 'var(--brand)' : '';
+      if(viewId === 'dashboard') renderNotes();
+    }
+
+    ui.navDashboard.addEventListener('click', () => switchView('dashboard'));
+    ui.navNewNote.addEventListener('click', () => { switchView('editor'); newNote(); });
+
+    function loadJSON(k,fb){try{const v=JSON.parse(localStorage.getItem(k));return v??fb}catch{return fb}}
+    function showToast(m,t="info"){const d=document.createElement("div");const c=t==="error"?"border-red-500/30 bg-red-950/95 text-red-200":t==="success"?"border-emerald-500/30 bg-emerald-950/95 text-emerald-200":"border-themed-subtle bg-themed-card text-themed-primary";d.className=`toast-in pointer-events-auto w-full rounded-2xl border px-5 py-3.5 text-sm font-bold shadow-2xl backdrop-blur-xl ${c}`;d.textContent=m;$("toastRegion").appendChild(d);setTimeout(()=>{d.style.opacity="0";d.style.transform="translateY(-10px)";d.style.transition="200ms";setTimeout(()=>d.remove(),200)},2800)}
+    function setStatus(l,s="ready"){s==="listening"||s==="starting"?ui.statusDot.classList.add("animate-pulse"):ui.statusDot.classList.remove("animate-pulse");ui.statusLabel.textContent=l;ui.statusDot.style.background={ready:"#10b981",listening:"#ef4444",starting:"var(--brand)",error:"#ef4444"}[s]||"#10b981"}
+    function vibrate(p=25){settings.haptic&&navigator.vibrate&&navigator.vibrate(p)}
+    function tone(f){if(!settings.sound)return;try{const C=window.AudioContext||window.webkitAudioContext,c=new C(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.type="sine";g.gain.setValueAtTime(.035,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.13);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.14);o.onended=()=>c.close()}catch{}}
+
+    function applyTheme(){document.documentElement.setAttribute("data-theme",themeSettings.mode);document.documentElement.setAttribute("data-accent",themeSettings.accent);document.querySelector('meta[name="theme-color"]').content=themeSettings.mode==="dark"?"#09090b":"#f8fafc"}
+    function setAccent(a){themeSettings.accent=a;applyTheme();updateThemeUI();try{localStorage.setItem("vocalScribeTheme",JSON.stringify(themeSettings))}catch{}}
+    function setThemeMode(m){themeSettings.mode=m;applyTheme();updateThemeUI();try{localStorage.setItem("vocalScribeTheme",JSON.stringify(themeSettings))}catch{}}
+    function updateThemeUI(){
+        document.querySelectorAll(".accent-swatch").forEach(s=> {
+            if(s.dataset.accent===themeSettings.accent) s.style.borderColor = 'var(--text-primary)';
+            else s.style.borderColor = 'transparent';
+        });
+        const d=$("themeDarkBtn"),l=$("themeLightBtn");
+        if(d&&l){d.style.borderColor=themeSettings.mode==="dark"?"var(--brand)":"";l.style.borderColor=themeSettings.mode==="light"?"var(--brand)":""}
+    }
+
+    function autoSuggestTitle(){const ct=ui.title.value.trim();if(ct&&ct!=="Untitled transcript"&&!autoTitleApplied)return;const t=ui.transcript.value.trim();if(!t)return;const w=t.split(/\s+/).filter(x=>x.length>0);if(!w.length)return;const c=Math.min(w.length,7);let s=w.slice(0,c).join(" ").replace(/[,.!?;:]+$/,"").trim();if(s){s=s.charAt(0).toUpperCase()+s.slice(1);ui.title.value=s;autoTitleApplied=true}}
+
+    function persistFolders(){try{localStorage.setItem("vocalScribeFolders",JSON.stringify(folders))}catch{}}
+    function getFolderById(id){return folders.find(f=>f.id===id)}
+    function countNotesInFolder(folderId){if(folderId==="all")return notes.length;const ids=getAllFolderIds(folderId);return notes.filter(n=>ids.includes(n.folderId||"all")).length}
+    function getAllFolderIds(folderId){const ids=[folderId];const children=folders.filter(f=>f.parentId===folderId);children.forEach(c=>ids.push(...getAllFolderIds(c.id)));return ids}
+    
+    function renderFolders(){
+      ui.folderBar.replaceChildren();
+      const rootFolders=folders.filter(f=>!f.parentId);
+      rootFolders.forEach(folder=>{
+        const el=document.createElement("button");
+        el.className=`chip ${folder.id===activeFolderId?"active":""}`;
+        const count=countNotesInFolder(folder.id);
+        el.innerHTML=`<span>${escapeHTML(folder.name)}<\/span><span class="chip-count">${count}<\/span>`;
+        el.addEventListener("click",()=>{activeFolderId=folder.id;renderFolders();renderNotes()});
+        el.addEventListener("contextmenu",e=>{e.preventDefault();if(folder.id!=="all")openFolderModal(folder.id)});
+        ui.folderBar.appendChild(el);
+      });
+      const children=folders.filter(f=>f.parentId===activeFolderId);
+      if(children.length>0){
+        ui.subfolderBar.classList.remove("hidden");ui.subfolderBar.replaceChildren();
+        children.forEach(child=>{
+          const el=document.createElement("button");
+          el.className=`chip ${child.id===activeFolderId?"active":""} text-[11px]`;
+          const count=countNotesInFolder(child.id);
+          el.innerHTML=`<span>${escapeHTML(child.name)}<\/span><span class="chip-count">${count}<\/span>`;
+          el.addEventListener("click",()=>{activeFolderId=child.id;renderFolders();renderNotes()});
+          el.addEventListener("contextmenu",e=>{e.preventDefault();openFolderModal(child.id)});
+          ui.subfolderBar.appendChild(el);
+        });
+      }else{ui.subfolderBar.classList.add("hidden")}
+      
+      const draft=loadJSON("vocalScribeDraft",null);
+      const noteFolderId=draft?.folderId||"all";
+      const nf=getFolderById(noteFolderId);
+      ui.currentFolderLabel.textContent=nf?nf.name:"All";
+    }
+
+    function renderFolderDropdown(){
+      ui.folderDropdown.replaceChildren();
+      folders.forEach(f=>{
+        const el=document.createElement("button");
+        const indent=f.parentId?"pl-8":"px-4";
+        el.className=`w-full text-left py-2.5 text-sm font-semibold text-themed-secondary hover:bg-themed-subtle hover:text-brand transition ${indent}`;
+        el.textContent=f.name;
+        el.addEventListener("click",()=>{assignNoteToFolder(f.id);ui.folderDropdown.classList.add("hidden")});
+        ui.folderDropdown.appendChild(el);
+      });
+    }
+    function assignNoteToFolder(folderId){
+      const draft=loadJSON("vocalScribeDraft",{})||{}; draft.folderId=folderId;
+      try{localStorage.setItem("vocalScribeDraft",JSON.stringify(draft))}catch{}
+      if(activeNoteId){const idx=notes.findIndex(n=>n.id===activeNoteId);if(idx>=0){notes[idx].folderId=folderId;persistNotes()}}
+      const f=getFolderById(folderId); ui.currentFolderLabel.textContent=f?f.name:"All";
+      showToast(`Assigned to ${f?f.name:"folder"}.`,"success");
+    }
+
+    function openFolderModal(editId){
+      editingFolderId=editId||null;
+      $("folderModalTitle").textContent=editId?"Edit Folder":"New Folder";
+      $("folderModalDelete").classList.toggle("hidden",!editId);
+      if(editId){const f=getFolderById(editId);$("folderNameInput").value=f?f.name:""}else $("folderNameInput").value="";
+      const sel=$("parentFolderSelectEl");sel.replaceChildren();
+      const rootOpt=document.createElement("option");rootOpt.value="";rootOpt.textContent="Root (no parent)";sel.appendChild(rootOpt);
+      folders.filter(f=>f.id!=="all"&&f.id!==editId).forEach(f=>{const o=document.createElement("option");o.value=f.id;o.textContent=f.name;sel.appendChild(o)});
+      if(editId){const f=getFolderById(editId);sel.value=f?.parentId||"";$("parentFolderSelect").classList.remove("hidden")}
+      else{$("parentFolderSelect").classList.remove("hidden");sel.value=activeFolderId!=="all"?activeFolderId:""}
+      openOverlay(ui.folderModal);$("folderNameInput").focus();
+    }
+
+    function saveFolderFromModal(){
+      const name=$("folderNameInput").value.trim();if(!name)return showToast("Enter a folder name.","error");
+      const parentId=$("parentFolderSelectEl").value||null;
+      if(editingFolderId){const f=getFolderById(editingFolderId);if(f){f.name=name;f.parentId=parentId}}
+      else{const id=crypto?.randomUUID?.()||String(Date.now());folders.push({id,name,parentId})}
+      persistFolders();renderFolders();renderNotes();closeOverlays();showToast(editingFolderId?"Folder updated.":"Folder created.","success");
+    }
+    function deleteFolderFromModal(){
+      if(!editingFolderId)return; const f=getFolderById(editingFolderId);if(!f)return;
+      if(!confirm(`Delete "${f.name}"? Notes will move to All Notes.`))return;
+      notes.forEach(n=>{if(n.folderId===editingFolderId)n.folderId="all"});
+      folders.forEach(cf=>{if(cf.parentId===editingFolderId)cf.parentId=null});
+      folders=folders.filter(x=>x.id!==editingFolderId);
+      if(activeFolderId===editingFolderId)activeFolderId="all";
+      persistFolders();persistNotes();renderFolders();renderNotes();closeOverlays();showToast("Folder deleted.");
+    }
+
+    // Waveform
+    function initWaveformCanvas(){resizeWaveformCanvas();window.addEventListener("resize",resizeWaveformCanvas)}
+    function resizeWaveformCanvas(){const c=ui.waveformCanvas,p=c.parentElement;if(!p)return;const r=p.getBoundingClientRect();c.width=r.width*devicePixelRatio;c.height=60*devicePixelRatio;c.style.width=r.width+"px";c.style.height="60px"}
+    function drawWaveform(){if(!analyser)return;const c=ui.waveformCanvas,ctx=c.getContext("2d"),w=c.width/devicePixelRatio,h=c.height/devicePixelRatio;const buf=new Uint8Array(analyser.frequencyBinCount);analyser.getByteTimeDomainData(buf);ctx.save();ctx.scale(devicePixelRatio,devicePixelRatio);ctx.clearRect(0,0,w,h);
+      const brand=getComputedStyle(document.documentElement).getPropertyValue('--brand').trim()||'#f59e0b';
+      const slice=w/buf.length; ctx.lineWidth=3; ctx.strokeStyle=brand; ctx.beginPath();
+      for(let i=0;i<buf.length;i++){const y=(buf[i]/128*h)/2;i?ctx.lineTo(i*slice,y):ctx.moveTo(0,y)}ctx.stroke();ctx.restore();waveAnimId=requestAnimationFrame(drawWaveform)}
+
+    function startAudioRecording(){if(!settings.audioRecord||!audioStream)return;try{audioChunks=[];mediaRecorder=new MediaRecorder(audioStream,{mimeType:MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'audio/webm'});mediaRecorder.ondataavailable=e=>{if(e.data.size>0)audioChunks.push(e.data)};mediaRecorder.onstop=()=>{const b=new Blob(audioChunks,{type:'audio/webm'});if(audioBlobUrl)URL.revokeObjectURL(audioBlobUrl);audioBlobUrl=URL.createObjectURL(b);ui.audioPlayer.src=audioBlobUrl;ui.audioPlayerContainer.classList.remove("hidden")};mediaRecorder.start(100)}catch{}}
+    function stopAudioRecording(){if(mediaRecorder&&mediaRecorder.state!=="inactive")try{mediaRecorder.stop()}catch{}mediaRecorder=null}
+
+    function createRecognition(){if(!SR)return;const e=new SR();recognition=e;e.lang=$("languageSelect").value;e.continuous=settings.continuous;e.interimResults=true;e.maxAlternatives=1;
+      e.onstart=()=>{if(recognition!==e){try{e.abort()}catch{}return}startPending=false;recognitionRunning=true;if(!wantsToListen){try{e.stop()}catch{}return}fatalRecognitionError=false;restartAttempts=0;cycleId++;handledFinalResults=new Set();setListeningUI(true);setStatus("Listening","listening");if(!listeningSessionActive){listeningSessionActive=true;tone(720);vibrate(35)}};
+      e.onresult=ev=>{if(recognition!==e)return;const ip=[];for(let i=ev.resultIndex;i<ev.results.length;i++){const r=ev.results[i],raw=(r[0]?.transcript||"").trim();if(!raw)continue;if(r.isFinal){const k=`${cycleId}:${i}`;if(handledFinalResults.has(k))continue;handledFinalResults.add(k);commitFinal(raw)}else ip.push(raw)}const t=ip.join(" ").trim();ui.interimText.textContent=t;const w=ui.interimBubble.classList.contains("hidden");ui.interimBubble.classList.toggle("hidden",!t);if(t&&w)ui.interimBubble.classList.add("scale-in")};
+      e.onerror=ev=>{if(recognition!==e)return;startPending=false;const err=ev.error;if(err==="not-allowed"||err==="service-not-allowed"){fatalRecognitionError=true;wantsToListen=false;showToast("Mic blocked.","error");setStatus("Blocked","error")}else if(err==="audio-capture"){fatalRecognitionError=true;wantsToListen=false;showToast("No mic.","error");setStatus("No mic","error")}else if(err==="network")showToast("Network error.","error")};
+      e.onend=()=>{if(recognition!==e)return;recognitionRunning=false;startPending=false;ui.interimBubble.classList.add("hidden");if(wantsToListen&&settings.continuous&&!fatalRecognitionError){restartAttempts++;if(restartAttempts>MAX_RESTART){wantsToListen=false;listeningSessionActive=false;setListeningUI(false);setStatus("Ready","ready");stopWaveform();showToast("Paused.","error");return}setStatus("Reconnecting","starting");clearTimeout(restartTimer);restartTimer=setTimeout(startRecCycle,320)}else{wantsToListen=false;listeningSessionActive=false;setListeningUI(false);if(!fatalRecognitionError)setStatus("Ready","ready");stopWaveform()}};
+    }
+    function commitFinal(raw){const now=Date.now(),norm=raw.toLocaleLowerCase().replace(/[\s.,!?;:'"\-—]+/g," ").replace(/ {2,}/g," ").trim();recentFinals=recentFinals.filter(x=>now-x.time<8000);if(recentFinals.some(x=>{if(x.text!==norm)return false;const a=now-x.time;return a<2000||(x.cycle!==cycleId&&a<12000)}))return;if(recentFinals.some(x=>{const a=now-x.time;return a<=3500&&x.text.length>norm.length&&x.text.includes(norm)}))return;recentFinals.push({text:norm,time:now,cycle:cycleId});const cmd=settings.commands?applyCmds(raw):{text:raw,stop:false,clear:false};if(cmd.clear){ui.transcript.value="";onTranscriptChanged();showToast("Cleared.");return}if(cmd.text)appendTranscript(cmd.text);if(cmd.stop)stopListening()}
+    function applyCmds(raw){const ex=raw.toLocaleLowerCase().trim().replace(/[.!?]+$/,"");if(ex==="clear transcript")return{text:"",clear:true,stop:false};if(ex==="stop listening"||ex==="stop recording")return{text:"",clear:false,stop:true};let t=raw;t=t.replace(/\bnew paragraph\b/gi,"\n\n").replace(/\bnew line\b/gi,"\n").replace(/\b(full stop|period)\b/gi,".").replace(/\bcomma\b/gi,",").replace(/\bquestion mark\b/gi,"?").replace(/\bexclamation (mark|point)\b/gi,"!").replace(/[ \t]+([,.!?])[ \t]*/g,"$1 ").replace(/[ \t]{2,}/g," ").replace(/^ +| +$/g,"");return{text:t,clear:false,stop:false}}
+    function appendTranscript(inc){let cur=ui.transcript.value,text=inc;const ce=cur.replace(/\s+$/,""),tt=text.replace(/^\s+|\s+$/g,"");if(tt&&ce){if(ce.endsWith(tt)||ce.toLocaleLowerCase().endsWith(tt.toLocaleLowerCase()))return;const rft=recentFinals.map(x=>x.text);for(let i=rft.length-1;i>=0;i--){const p=rft[i],pl=p.length,il=tt.toLocaleLowerCase().length;if(pl>2&&pl<il&&tt.toLocaleLowerCase().includes(p)&&ce.toLocaleLowerCase().endsWith(p)){cur=ce.slice(0,ce.length-pl).replace(/\s+$/,"");let s=cur?" ":"";if(/^[,.!?\n]/.test(text))s="";ui.transcript.value=cur+s+text;ui.transcript.scrollTop=ui.transcript.scrollHeight;onTranscriptChanged();return}}}const isSt=!cur.trim()||/[.!?]\s*$/.test(cur)||/\n\s*$/.test(cur);if(isSt&&/^[a-z]/.test(text))text=text.charAt(0).toUpperCase()+text.slice(1);let sep=" ";if(!cur||/\s$/.test(cur)||/^[,.!?\n]/.test(text))sep="";if(/^[,.!?]/.test(text))cur=cur.replace(/\s+$/,"");ui.transcript.value=cur+sep+text;ui.transcript.scrollTop=ui.transcript.scrollHeight;onTranscriptChanged()}
+
+    async function startListening(){if(activeView !== 'editor') switchView('editor'); if(!SR||wantsToListen||recognitionRunning||startPending)return;wantsToListen=true;restartAttempts=0;fatalRecognitionError=false;setStatus("Starting","starting");await startAudioCtx();if(!wantsToListen){stopWaveform();setListeningUI(false);return}startRecCycle()}
+    function startRecCycle(){if(!recognition||!wantsToListen||recognitionRunning||startPending)return;clearTimeout(restartTimer);startPending=true;try{recognition.lang=$("languageSelect").value;recognition.continuous=settings.continuous;recognition.start()}catch{startPending=false;restartAttempts++;if(wantsToListen&&restartAttempts<=MAX_RESTART)restartTimer=setTimeout(startRecCycle,450);else if(wantsToListen){wantsToListen=false;listeningSessionActive=false;setListeningUI(false);setStatus("Ready","ready");stopWaveform();showToast("Cannot start.","error")}}}
+    function stopListening(sm=true){if(!wantsToListen&&!recognitionRunning&&!startPending)return;wantsToListen=false;restartAttempts=0;clearTimeout(restartTimer);ui.interimBubble.classList.add("hidden");try{if(recognitionRunning||startPending)recognition.stop()}catch{}recognitionRunning=false;startPending=false;listeningSessionActive=false;setListeningUI(false);setStatus("Ready","ready");stopWaveform();stopAudioRecording();tone(440);vibrate(20);if(sm)showToast("Stopped.")}
+    function setListeningUI(on){
+        ui.record.setAttribute("aria-pressed", String(on));
+        ui.record.style.background = on ? "var(--danger)" : "linear-gradient(135deg,var(--brand),var(--brand-hover))";
+        on ? ui.record.classList.add("rec-glow") : ui.record.classList.remove("rec-glow");
+        ui.micIcon.classList.toggle("hidden",on); ui.stopIcon.classList.toggle("hidden",!on);
+        ui.micPulse.classList.toggle("hidden",!on);
+        if(on){ui.waveformContainer.classList.remove("hidden");resizeWaveformCanvas();drawWaveform()}
+        else{ui.waveformContainer.classList.add("hidden");cancelAnimationFrame(waveAnimId)}
+    }
+    async function startAudioCtx(){if(!navigator.mediaDevices?.getUserMedia)return;try{audioStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const C=window.AudioContext||window.webkitAudioContext;audioContext=new C();analyser=audioContext.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=0.8;audioContext.createMediaStreamSource(audioStream).connect(analyser);startAudioRecording()}catch(e){if(e?.name==="NotAllowedError"){wantsToListen=false;fatalRecognitionError=true;setListeningUI(false);setStatus("Blocked","error");showToast("Mic denied.","error")}}}
+    function stopWaveform(){cancelAnimationFrame(waveAnimId);waveAnimId=null;analyser=null;if(audioStream){audioStream.getTracks().forEach(t=>t.stop());audioStream=null}if(audioContext&&audioContext.state!=="closed")audioContext.close().catch(()=>{});audioContext=null}
+    function restartRecForLang(){const r=wantsToListen;if(wantsToListen||recognitionRunning||startPending)stopListening(false);const old=recognition;recognition=null;try{if(old)old.abort()}catch{}createRecognition();if(r)setTimeout(startListening,280)}
+
+    function onTranscriptChanged(){try{updateStats();autoSuggestTitle();checkPerfWarn();ui.saveState.textContent="Saving...";ui.saveState.classList.add("save-pulse");ui.saveTimestamp.classList.add("hidden");clearTimeout(saveTimer);saveTimer=setTimeout(saveDraft,450)}catch{}}
+    function checkPerfWarn(){const t=ui.transcript.value.trim(),w=t?t.split(/\s+/u).length:0;if(w>=50000){ui.perfWarning.classList.remove("hidden");ui.perfWarningText.textContent=`Very long transcript (${(w/1000).toFixed(1)}k words). Performance may degrade.`}else ui.perfWarning.classList.add("hidden")}
+    function saveDraft(){
+        const d=loadJSON("vocalScribeDraft",{})||{};
+        const draft={...d,title:ui.title.value,text:ui.transcript.value,activeNoteId,tags:activeTags,updatedAt:Date.now(),autoTitleApplied};
+        try{localStorage.setItem("vocalScribeDraft",JSON.stringify(draft))}catch{ui.saveState.textContent="Unsaved";return}
+        const now=new Date(),ts=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+        ui.saveState.textContent="Saved";ui.saveState.classList.remove("save-pulse");ui.saveTimestamp.textContent=ts;ui.saveTimestamp.classList.remove("hidden");
+        saveNote(true); // Auto save to notes list quietly
+    }
+    function restoreDraft(){const d=loadJSON("vocalScribeDraft",null);if(!d)return;ui.title.value=typeof d.title==="string"?d.title:"Untitled transcript";ui.transcript.value=typeof d.text==="string"?d.text:"";activeNoteId=typeof d.activeNoteId==="string"?d.activeNoteId:null;activeTags=Array.isArray(d.tags)?d.tags:[];autoTitleApplied=typeof d.autoTitleApplied==="boolean"?d.autoTitleApplied:false;if(d.updatedAt){const t=new Date(d.updatedAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});ui.saveState.textContent="Saved";ui.saveTimestamp.textContent=t;ui.saveTimestamp.classList.remove("hidden")}}
+    function updateStats(){const t=ui.transcript.value,tr=t.trim(),w=tr?tr.split(/\s+/u).length:0;$("wordCount").textContent=w.toLocaleString();$("charCount").textContent=t.length.toLocaleString();}
+
+    function addTag(tag){tag=tag.trim();if(!tag||activeTags.includes(tag))return;activeTags.push(tag);renderActiveTags();onTranscriptChanged()}
+    function removeTag(tag){activeTags=activeTags.filter(t=>t!==tag);renderActiveTags();onTranscriptChanged()}
+    function renderActiveTags(){
+      ui.activeTagsContainer.replaceChildren();
+      activeTags.forEach(tag=>{
+        const b=document.createElement("div");
+        b.className="inline-flex items-center gap-1.5 rounded-full border border-themed-subtle bg-themed-subtle px-3 py-1 text-[11px] font-bold text-themed-primary shadow-sm";
+        b.innerHTML=`<span>#${escapeHTML(tag)}<\/span> <button class="flex h-4 w-4 items-center justify-center rounded-full hover:bg-black/10 dark:hover:bg-white/10 opacity-70 hover:opacity-100">&times;<\/button>`;
+        b.querySelector('button').addEventListener('click',()=>removeTag(tag));
+        ui.activeTagsContainer.appendChild(b)
+      });
+    }
+    ui.tagInput.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===","){e.preventDefault();addTag(ui.tagInput.value);ui.tagInput.value=""}});
+    ui.tagInput.addEventListener("blur",()=>{if(ui.tagInput.value){addTag(ui.tagInput.value);ui.tagInput.value=""}});
+
+    function saveNote(quiet=false){
+      const text=ui.transcript.value.trim();if(!text)return;
+      const now=Date.now(),idx=notes.findIndex(n=>n.id===activeNoteId);
+      let title=ui.title.value.trim();
+      if(!title||title==="Untitled transcript"){
+        const w=text.split(/\s+/).filter(x=>x.length>0),c=Math.min(w.length,7);
+        if(c>0){title=w.slice(0,c).join(" ").replace(/[,.!?;:]+$/,"").trim();title=title.charAt(0).toUpperCase()+title.slice(1);ui.title.value=title;autoTitleApplied=true}
+        else title="Untitled transcript"
+      }
+      const draft=loadJSON("vocalScribeDraft",{})||{};
+      const note={id:activeNoteId||crypto?.randomUUID?.()||String(now),title,text:ui.transcript.value,tags:[...activeTags],folderId:draft.folderId||"all",createdAt:idx>=0?notes[idx].createdAt:now,updatedAt:now};
+      activeNoteId=note.id;if(idx>=0)notes[idx]=note;else notes.unshift(note);
+      persistNotes();
+      if(!quiet){ showToast("Saved!","success"); vibrate(30); }
+    }
+    function persistNotes(){try{localStorage.setItem("vocalScribeNotes",JSON.stringify(notes))}catch{} if(activeView === 'dashboard') renderNotes();}
+    function escapeHTML(s){return s?s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"):""}
+    function highlightMatches(text,q){if(!q)return escapeHTML(text);const safe=escapeHTML(text);try{const e=q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),re=new RegExp("("+e+")","gi");return safe.replace(re,'<mark class="rounded px-0.5" style="background:var(--brand-glow);color:var(--text-primary)">$1<\/mark>')}catch{return safe}}
+    
+    function loadNote(id){
+      const n=notes.find(x=>x.id===id);if(!n)return;
+      stopListening(false);activeNoteId=n.id;ui.title.value=n.title;ui.transcript.value=n.text;activeTags=[...(n.tags||[])];autoTitleApplied=false;
+      const draft=loadJSON("vocalScribeDraft",{})||{};draft.folderId=n.folderId||"all";draft.activeNoteId=n.id;
+      try{localStorage.setItem("vocalScribeDraft",JSON.stringify(draft))}catch{}
+      renderActiveTags();onTranscriptChanged();renderFolders();
+      switchView('editor');
+    }
+    function deleteNote(id){const n=notes.find(x=>x.id===id);if(!n||!confirm(`Delete "${n.title}"?`))return;notes=notes.filter(x=>x.id!==id);if(activeNoteId===id)activeNoteId=null;persistNotes();renderFolders();showToast("Deleted.")}
+    
+    function renderNotes(){
+      try{
+        const query=($("notesSearch")?.value||"").trim().toLocaleLowerCase(),sort=ui.sortSelect?.value||"updated";
+        const folderIds=activeFolderId==="all"?null:getAllFolderIds(activeFolderId);
+        let filtered=notes.filter(n=>{if(folderIds&&!folderIds.includes(n.folderId||"all"))return false;if(notesFilterTag&&!n.tags.some(t=>t.toLocaleLowerCase()===notesFilterTag.toLocaleLowerCase()))return false;if(query&&(n.title+" "+n.text).toLocaleLowerCase().indexOf(query)===-1)return false;return true});
+        if(sort==="created")filtered.sort((a,b)=>(b.createdAt||b.updatedAt)-(a.createdAt||a.updatedAt));else if(sort==="alpha")filtered.sort((a,b)=>a.title.localeCompare(b.title));else filtered.sort((a,b)=>b.updatedAt-a.updatedAt);
+        ui.savedNotesGrid.replaceChildren();
+        
+        if(!filtered.length){
+          const e=document.createElement("div");e.className="col-span-full flex flex-col items-center justify-center p-12 text-center border border-dashed rounded-3xl themed-card";
+          e.innerHTML=`<svg class="mb-4 h-12 w-12 text-themed-muted opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h10"/></svg><p class="text-base font-bold text-themed-muted">${query||notesFilterTag?"No matching notes":"Folder is empty"}</p>`;
+          ui.savedNotesGrid.appendChild(e);return;
+        }
+        const frag=document.createDocumentFragment();
+        filtered.forEach(raw=>{try{
+          const note={...raw,tags:raw.tags||[]};
+          const card=document.createElement("article");
+          card.className="themed-card group flex flex-col rounded-3xl border p-6 transition-all hover:shadow-lg cursor-pointer";
+          card.addEventListener('click', (e) => { if(!e.target.closest('button')) loadNote(note.id); });
+          
+          const header=document.createElement("div");header.className="flex justify-between items-start gap-4 mb-2";
+          const title=document.createElement("h3");title.className="font-bold text-themed-primary text-lg line-clamp-1 leading-tight";title.innerHTML=highlightMatches(note.title,query);
+          const date=document.createElement("span");date.className="shrink-0 text-[10px] font-bold tracking-widest text-themed-dim uppercase mt-1";date.textContent=new Date(note.updatedAt).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+          header.append(title,date);
+          
+          const preview=document.createElement("p");preview.className="text-sm font-medium text-themed-muted leading-relaxed line-clamp-3 mb-4 flex-1";preview.innerHTML=highlightMatches((note.text||"").replace(/\n/g," "),query);
+          
+          const tagsRow=document.createElement("div");tagsRow.className="flex flex-wrap gap-1.5 mb-5 min-h-[24px]";
+          note.tags.forEach(tag=>{const c=document.createElement("span");c.className="cursor-pointer rounded-md border border-themed-subtle bg-themed-subtle px-2 py-0.5 text-[10px] font-bold text-themed-secondary transition hover:opacity-80";c.textContent='#'+tag;c.addEventListener("click",(e)=>{e.stopPropagation(); notesFilterTag=tag;renderNotes()});tagsRow.appendChild(c)});
+          
+          const footer=document.createElement("div");footer.className="flex items-center justify-between pt-4 border-t border-themed-subtle mt-auto";
+          const acts=document.createElement("div");acts.className="flex gap-2 w-full justify-end";
+          
+          const delBtn=document.createElement("button");delBtn.className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/5 text-red-500 transition hover:bg-red-500/20";delBtn.title="Delete";delBtn.innerHTML='<svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>';
+          delBtn.addEventListener("click",(e)=>{e.stopPropagation();deleteNote(note.id)});
+          acts.append(delBtn);footer.appendChild(acts);card.append(header,preview,tagsRow,footer);frag.appendChild(card)}catch{}});
+        ui.savedNotesGrid.appendChild(frag)
+      }catch{}}
+
+    function newNote(){if(ui.transcript.value.trim()&&!confirm("Start new note? Current changes are saved automatically."))return;stopListening(false);activeNoteId=null;activeTags=[];autoTitleApplied=false;ui.title.value="Untitled transcript";ui.transcript.value="";renderActiveTags();onTranscriptChanged();closeOverlays();window.scrollTo({top:0,behavior:'smooth'});ui.transcript.focus()}
+    
+    function openOverlay(el){closeOverlays(false);ui.backdrop.classList.remove("hidden");void ui.backdrop.offsetWidth;ui.backdrop.classList.remove("opacity-0");el.classList.remove("hidden")}
+    function closeOverlays(h=true){ui.settingsModal.classList.add("hidden");ui.actionsModal.classList.add("hidden");ui.folderModal.classList.add("hidden");$("findBar").classList.add("hidden");$("findBar").classList.remove("grid");ui.folderDropdown.classList.add("hidden");if(h){ui.backdrop.classList.add("opacity-0");setTimeout(()=>ui.backdrop.classList.add("hidden"),300)}}
+
+    async function copyText(){if(!ui.transcript.value.trim())return showToast("Nothing to copy.","error");try{if(!navigator.clipboard?.writeText)throw 0;await navigator.clipboard.writeText(ui.transcript.value);showToast("Copied!","success")}catch{ui.transcript.select();document.execCommand("copy");showToast("Copied!","success")}}
+    
+    function magicEnhance(){
+        const o=ui.transcript.value;
+        if(!o.trim())return showToast("Nothing to enhance.","error");
+        showToast("Applying Magic Enhance...", "info");
+        
+        setTimeout(() => {
+            // 1. Remove fillers (invisibly cleans)
+            let c=o.replace(/\b(um+|uh+|erm+|ah+|like)\b[,.!?]?\s*/gi,"").replace(/\b(you know|sort of|kind of|I mean|basically|literally|actually|you see|I guess)\b[,.!?]?\s*/gi,"").replace(/ {2,}/g," ").replace(/\n{3,}/g,"\n\n").replace(/(^|[.!?]\s+)([a-z])/g,(_,s,l)=>s+l.toUpperCase());
+            ui.transcript.value = c;
+            
+            // 2. Call Smart Format
+            smartFormat(true);
+        }, 500);
+    }
+
+    function smartFormat(isMagic=false){
+      const original=ui.transcript.value;
+      if(!original.trim() && !isMagic) return showToast("Nothing to format.","error");
+      let text=original.replace(/\r\n/g,"\n").replace(/\t/g,"  ").replace(/[ \t]+/g," ").replace(/ +\n/g,"\n").replace(/\n +/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+      const sentences=[]; const parts=text.split(/(?<=[.!?])\s+/);
+      parts.forEach(p=>{if(p.trim())sentences.push(p.trim())});
+      if(sentences.length<2 && !isMagic) return showToast("Text too short to format.");
+      
+      const ordinalMap={"first":"1","second":"2","third":"3","fourth":"4","fifth":"5","finally":"","lastly":""};
+      const ordinalRegex=new RegExp("^("+Object.keys(ordinalMap).join("|")+")\\b[,\\s:]*(.*)","i");
+      const bulletRegex=/^(also|another|next|additionally|furthermore|moreover)\b[,\\s:]*(.*)/i;
+      const headingPatterns=[/^(section|chapter|part|topic|heading)\s+\d*\s*:?\s*(.*)/i, /^(let'?s?\s+(?:discuss|cover|talk about))\s+(.*)/i];
+      
+      const blocks=[]; let currentParagraph=[]; let numberedList=[]; let bulletList=[];
+      function flushAll(){
+          if(currentParagraph.length>0){blocks.push({type:"paragraph",content:currentParagraph.join(" ")});currentParagraph=[]}
+          if(numberedList.length>0){blocks.push({type:"numbered",items:[...numberedList]});numberedList=[]}
+          if(bulletList.length>0){blocks.push({type:"bullets",items:[...bulletList]});bulletList=[]}
+      }
+
+      for(let i=0;i<sentences.length;i++){
+        const s=sentences[i], sl=s.replace(/[.!?]+$/,"").trim();
+        let isHeading=false;
+        for(const p of headingPatterns){const m=s.match(p);if(m){flushAll();blocks.push({type:"heading",content:(m[2]||m[1]).replace(/[:.!?]$/,"")});isHeading=true;break}}
+        if(isHeading)continue;
+
+        const ordMatch=s.match(ordinalRegex), numMatch=s.match(/^(\d+)\s*[.):]\s*(.*)/), bulMatch=s.match(bulletRegex), dashMatch=s.match(/^[-–—•]\s+(.*)/);
+        if(ordMatch || numMatch){
+          flushAll();
+          let itemText = ordMatch ? (ordMatch[2]||sl).replace(/^[,:\s]+/,"") : (numMatch[2]||"");
+          const cleaned=itemText.charAt(0).toUpperCase()+itemText.slice(1);
+          numberedList.push(cleaned.endsWith(".")||cleaned.endsWith("!")||cleaned.endsWith("?")?cleaned:cleaned+".");
+          continue;
+        }
+        if(bulMatch || dashMatch){
+          flushAll();
+          let itemText = bulMatch ? (bulMatch[2]||sl).replace(/^[,:\s]+/,"") : (dashMatch[1]||"");
+          const cleaned=itemText.charAt(0).toUpperCase()+itemText.slice(1);
+          bulletList.push(cleaned.endsWith(".")||cleaned.endsWith("!")||cleaned.endsWith("?")?cleaned:cleaned+".");
+          continue;
+        }
+        if(numberedList.length>0 || bulletList.length>0) flushAll();
+        
+        let cap=s; if(/^[a-z]/.test(cap))cap=cap.charAt(0).toUpperCase()+cap.slice(1);
+        currentParagraph.push(cap);
+        if(currentParagraph.length>=4 || /^(however|therefore|moreover|consequently)\b/i.test(cap)){ const last=currentParagraph.pop(); flushAll(); currentParagraph.push(last); }
+      }
+      flushAll();
+
+      const output=[];
+      blocks.forEach((block,idx)=>{
+        if(idx>0)output.push("");
+        if(block.type==="heading"){output.push(block.content.toUpperCase()+"\n");}
+        else if(block.type==="paragraph"){output.push(block.content);}
+        else if(block.type==="numbered"){block.items.forEach((item,i)=>output.push(`${i+1}. ${item}`));}
+        else if(block.type==="bullets"){block.items.forEach(item=>output.push(`• ${item}`));}
+      });
+      const formatted=output.join("\n").replace(/\n{3,}/g,"\n\n").trim();
+      if(formatted===original.trim() && !isMagic) return showToast("No formatting improvements found.");
+      ui.transcript.value=formatted; onTranscriptChanged();
+      if(isMagic) showToast("Enhanced & Formatted!","success");
+      else showToast("Text Restructured.","success");
+    }
+
+    function replaceAll(){const s=$("findInput").value;if(!s)return;const r=$("replaceInput").value,e=s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),re=new RegExp(e,"gi"),m=ui.transcript.value.match(re);if(!m)return showToast("No matches.");ui.transcript.value=ui.transcript.value.replace(re,r);onTranscriptChanged();showToast(`${m.length} replaced.`,"success")}
+    function safeFilename(){return(ui.title.value.trim()||"transcript").replace(/[^a-z0-9-_]+/gi,"-").replace(/^-|-$/g,"").slice(0,60)||"transcript"}
+    function downloadBlob(blob,ext){const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=`${safeFilename()}.${ext}`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),500)}
+    
+    function exportDocument(fmt){
+      const title=ui.title.value.trim()||"Untitled",text=ui.transcript.value;
+      if(!text.trim()&&fmt!=="json")return showToast("Nothing to export.","error");
+      if(fmt==="txt")downloadBlob(new Blob([text],{type:"text/plain;charset=utf-8"}),"txt");
+      else if(fmt==="md")downloadBlob(new Blob([`# ${title}\n\n${text}\n`],{type:"text/markdown;charset=utf-8"}),"md");
+      else if(fmt==="doc"){const esc=text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>"),st=title.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");const h=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'><head><meta charset='utf-8'><title>${st}<\/title><\/head><body><h1>${st}<\/h1><p>${esc}<\/p><\/body><\/html>`;downloadBlob(new Blob(['\ufeff',h],{type:'application/msword'}),"doc")}
+      else if(fmt==="pdf"){
+        try{const{jsPDF}=window.jspdf;const doc=new jsPDF();const margin=20,pageW=doc.internal.pageSize.getWidth()-margin*2;doc.setFontSize(22);doc.setFont("helvetica","bold");const titleLines=doc.splitTextToSize(title,pageW);doc.text(titleLines,margin,margin+10);doc.setFontSize(10);doc.setFont("helvetica","normal");doc.setTextColor(120);doc.text(`Created: ${new Date().toLocaleString()}`,margin,margin+10+titleLines.length*9+4);doc.setTextColor(0);doc.setFontSize(12);doc.setFont("helvetica","normal");const lines=doc.splitTextToSize(text,pageW);let y=margin+10+titleLines.length*9+18;lines.forEach(line=>{if(y>doc.internal.pageSize.getHeight()-margin){doc.addPage();y=margin}doc.text(line,margin,y);y+=7})}catch(e){showToast("PDF export failed.","error");}
+        downloadBlob(doc.output("blob"),"pdf");
+      }
+      else if(fmt==="json"){const data={title,text,tags:activeTags,folder:getFolderById(loadJSON("vocalScribeDraft",{})?.folderId)?.name||"All",createdAt:activeNoteId?notes.find(n=>n.id===activeNoteId)?.createdAt:Date.now(),updatedAt:Date.now(),wordCount:text.trim()?text.trim().split(/\s+/).length:0,charCount:text.length,exportedAt:new Date().toISOString()};downloadBlob(new Blob([JSON.stringify(data,null,2)],{type:"application/json;charset=utf-8"}),"json")}
+      closeOverlays();showToast(`Exported as .${fmt}`,"success");
+    }
+    function printTranscript(){if(!ui.transcript.value.trim())return showToast("Nothing to print.","error");$("printTitle").textContent=ui.title.value.trim()||"Untitled";$("printDate").textContent=`Prepared ${new Date().toLocaleString()}`;$("printBody").textContent=ui.transcript.value;closeOverlays();window.print()}
+    async function shareTranscript(){if(!ui.transcript.value.trim())return showToast("Nothing to share.","error");try{if(navigator.share)await navigator.share({title:ui.title.value,text:ui.transcript.value});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(ui.transcript.value);showToast("Copied.","success")}else await copyText()}catch(e){if(e?.name!=="AbortError")showToast("Share failed.","error")}closeOverlays()}
+    
+    function applySettingsToUI(){$("continuousSetting").checked=settings.continuous;$("commandsSetting").checked=settings.commands;$("soundSetting").checked=settings.sound;$("hapticSetting").checked=settings.haptic;if($("audioRecordSetting"))$("audioRecordSetting").checked=settings.audioRecord!==false}
+    function saveSettingsFromUI(){const cc=settings.continuous!==$("continuousSetting").checked;settings={continuous:$("continuousSetting").checked,commands:$("commandsSetting").checked,sound:$("soundSetting").checked,haptic:$("hapticSetting").checked,audioRecord:$("audioRecordSetting")?.checked!==false};try{localStorage.setItem("vocalScribeSettings",JSON.stringify(settings))}catch{}if(cc&&recognition)recognition.continuous=settings.continuous}
+
+    // Events Setup
+    let lock=false; ui.record.addEventListener("click",()=>{if(lock)return;lock=true;setTimeout(()=>{lock=false},350);wantsToListen||recognitionRunning||startPending?stopListening():startListening()});
+    ui.transcript.addEventListener("input",onTranscriptChanged);ui.title.addEventListener("input",()=>{autoTitleApplied=false;onTranscriptChanged()});
+    $("languageSelect").addEventListener("change",restartRecForLang); ui.copyButton.addEventListener("click",copyText);
+    ui.navSettings.addEventListener("click",()=>openOverlay(ui.settingsModal));ui.navExport.addEventListener("click",()=>openOverlay(ui.actionsModal));
+    $("notesSearch").addEventListener("input",renderNotes);ui.sortSelect.addEventListener("change",renderNotes);
+    
+    document.querySelectorAll(".accent-swatch").forEach(s=>s.addEventListener("click",()=>setAccent(s.dataset.accent)));
+    $("themeDarkBtn").addEventListener("click",()=>setThemeMode("dark"));$("themeLightBtn").addEventListener("click",()=>setThemeMode("light"));
+    
+    ui.backdrop.addEventListener("click",()=>{saveSettingsFromUI();closeOverlays()});
+    document.querySelectorAll("[data-close-overlay]").forEach(b=>b.addEventListener("click",()=>{saveSettingsFromUI();closeOverlays()}));
+    
+    $("findButton").addEventListener("click",()=>{$("findBar").classList.remove("hidden");$("findBar").classList.add("grid");$("findInput").focus()});
+    $("closeFindButton").addEventListener("click",()=>{$("findBar").classList.add("hidden");$("findBar").classList.remove("grid")});
+    $("replaceButton").addEventListener("click",replaceAll);$("formatButton").addEventListener("click",()=>smartFormat(false));
+    $("magicEnhanceBtn").addEventListener("click", magicEnhance);
+    
+    $("fontDownButton").addEventListener("click",()=>{fontSize=Math.max(14,fontSize-2);ui.transcript.style.fontSize=`${fontSize}px`});
+    $("fontUpButton").addEventListener("click",()=>{fontSize=Math.min(34,fontSize+2);ui.transcript.style.fontSize=`${fontSize}px`});
+    $("undoButton").addEventListener("click",()=>{ui.transcript.focus();document.execCommand("undo");onTranscriptChanged()});
+    
+    $("downloadAudioBtn").addEventListener("click",()=>{if(!audioBlobUrl)return;downloadBlob(new Blob([audioBlobUrl],{type:'audio/webm'}),"webm");showToast("Audio downloaded.","success")});
+    $("clearAudioBtn").addEventListener("click",()=>{if(audioBlobUrl)URL.revokeObjectURL(audioBlobUrl);audioBlobUrl=null;ui.audioPlayer.src="";ui.audioPlayerContainer.classList.add("hidden");showToast("Audio discarded.")});
+    
+    $("addFolderBtn").addEventListener("click",()=>openFolderModal(null));
+    $("folderModalSave").addEventListener("click",saveFolderFromModal); $("folderModalDelete").addEventListener("click",deleteFolderFromModal);
+    $("folderSelectBtn").addEventListener("click",e=>{e.stopPropagation();renderFolderDropdown();ui.folderDropdown.classList.toggle("hidden")});
+    document.addEventListener("click",e=>{if(!ui.folderDropdown.contains(e.target)&&e.target!==$("folderSelectBtn"))ui.folderDropdown.classList.add("hidden")});
+    
+    document.querySelectorAll("[data-action]").forEach(b=>b.addEventListener("click",()=>{const a=b.dataset.action;if(["txt","md","doc","pdf","json"].includes(a))exportDocument(a);else if(a==="print")printTranscript();else if(a==="share")shareTranscript();else if(a==="clear"){if(ui.transcript.value&&confirm("Clear Everything?")){ui.transcript.value="";activeTags=[];autoTitleApplied=false;renderActiveTags();onTranscriptChanged();closeOverlays()}}}));
+    
+    document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();ui.record.click()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveNote()}if(e.key==="Escape"){saveSettingsFromUI();closeOverlays()}});
+    window.addEventListener("beforeunload",()=>{saveDraft();stopWaveform()});
+  });
+  </script>
+</body>
+</html>
